@@ -7,10 +7,10 @@ class Installer
 
   def files
     files = {
-      gubbins: '/etc/scripts/gubbins.rb',
-      functions: '/etc/scripts/functions.rb',
-      iwinfo: '/etc/scripts/iwinfo.sh',
-      iwdump: '/etc/scripts/iwdump.sh'
+      "gubbins.rb" => '/etc/scripts/gubbins.rb',
+      "functions.rb" => '/etc/scripts/functions.rb',
+      "iwinfo.rb" => '/etc/scripts/iwinfo.sh',
+      "iwdump.rb" => '/etc/scripts/iwdump.sh'
     }
   end
 
