@@ -21,7 +21,8 @@ result=`echo $ssid_name,$device_mac,$ap_channel_mode,$tx_power_link_quality,$sig
 
 echo $result
 rm -rf /tmp/iwinfo
- }
+}
+
 source /usr/share/libubox/jshn.sh
 json_init
 #json_add_object "iwinfo"
