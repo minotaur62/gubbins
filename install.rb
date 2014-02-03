@@ -10,7 +10,8 @@ class Installer
       "gubbins.rb" => '/etc/scripts/gubbins.rb',
       "functions.rb" => '/etc/scripts/functions.rb',
       "iwinfo.sh" => '/etc/scripts/iwinfo.sh',
-      "iwdump.sh" => '/etc/scripts/iwdump.sh'
+      "iwdump.sh" => '/etc/scripts/iwdump.sh',
+      "airodump.sh" => '/etc/scripts/airodump.sh'
     }
   end
 
@@ -18,7 +19,7 @@ class Installer
     `mkdir -p /etc/scripts`
     files.each do |name,path|
       puts "Downloading #{name}"
-      system("curl -k -s --connect-timeout 5 -X GET #{base_url}/#{name} > #{path} && chmod +x #{path}")
+      system("curl -k -s --connect-timeout 5 -X GET #{base_url}/#{name} -o #{path} && chmod +x #{path}")
     end
   end
 
