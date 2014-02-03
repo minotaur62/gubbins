@@ -18,7 +18,7 @@ class Installer
     `mkdir -p /etc/scripts`
     files.each do |name,path|
       puts "Downloading #{name}"
-      system("curl -s --connect-timeout 5 -X GET #{base_url}/#{name} > #{path} && chmod +x #{path}")
+      system("curl -k -s --connect-timeout 5 -X GET #{base_url}/#{name} > #{path} && chmod +x #{path}")
     end
   end
 
