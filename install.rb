@@ -9,8 +9,8 @@ class Installer
     files = {
       "gubbins.rb" => '/etc/scripts/gubbins.rb',
       "functions.rb" => '/etc/scripts/functions.rb',
-      "iwinfo.rb" => '/etc/scripts/iwinfo.sh',
-      "iwdump.rb" => '/etc/scripts/iwdump.sh'
+      "iwinfo.sh" => '/etc/scripts/iwinfo.sh',
+      "iwdump.sh" => '/etc/scripts/iwdump.sh'
     }
   end
 
