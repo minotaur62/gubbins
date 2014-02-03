@@ -30,10 +30,10 @@ class GoGoGubbins
     @nvs = get_nvs
     @wvs = get_wvs
     @uptime = uptime
-    iwinfo = iwinfo
-    iwdump = iwdump('wlan0-1')
-    scan = airodump
-    data = "{\"data\":{\"serial\":\"#{$serial}\",\"ip\":\"#{@tun_ip}\",\"lmac\":\"#{$lan_mac}\",\"system\":\"#{$system_type}\",\"machine_type\":\"#{$machine_type}\",\"wan_ip\":\"#{get_wan_ip($wan_name)}\",\"uptime\":\"#{}\",\"sync\":\"#{@sync}\",\"version\":\"#{$version}\",\"chilli\":\"#{chilli_list}\"},\"iwinfo\":#{iwinfo},\"iwdump\":#{iwdump}}"
+    @iwinfo = iwinfo
+    @iwdump = iwdump('wlan0-1')
+    @scan = airodump
+    data = "{\"data\":{\"serial\":\"#{$serial}\",\"ip\":\"#{@tun_ip}\",\"lmac\":\"#{$lan_mac}\",\"system\":\"#{$system_type}\",\"machine_type\":\"#{$machine_type}\",\"wan_ip\":\"#{get_wan_ip($wan_name)}\",\"uptime\":\"#{}\",\"sync\":\"#{@sync}\",\"version\":\"#{$version}\",\"chilli\":\"#{chilli_list}\"},\"iwinfo\":#{@iwinfo},\"iwdump\":#{@iwdump}}"
     puts data
     Zlib::GzipWriter.open('data.gz') do |gz|
       gz.write data
