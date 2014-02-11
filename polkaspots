@@ -3,7 +3,7 @@ START=99
 start(){
 	source  /usr/share/libubox/jshn.sh
 	version=1.3
-        base_url=https://s3-eu-west-1.amazonaws.com/ps-openwrt-configs
+    base_url=https://s3-eu-west-1.amazonaws.com/ps-openwrt-configs
 	run_gubbins ( ) {
 	 /usr/bin/ruby /etc/scripts/gubbins.rb &
 	}
@@ -14,7 +14,7 @@ start(){
 	}
 	
 	download_and_start_coova () {
-		curl https://s3-eu-west-1.amazonaws.com/ps-openwrt-configs/init.d/chilli -o /etc/init.d/chilli -k && curl https://s3-eu-west-1.amazonaws.com/ps-openwrt-configs/configs/chilli/defaults -o /etc/chilli/defaults -k && chmod +x /etc/init.d/chilli && /etc/init.d/chilli start && echo 'restarted chilli'
+		curl $base_url/init.d/chilli -o /etc/init.d/chilli -k && curl $base_url/configs/chilli/defaults -o /etc/chilli/defaults -k && chmod +x /etc/init.d/chilli && /etc/init.d/chilli start && echo 'restarted chilli'
 	}
 
 	download_latest_configs() {
@@ -26,7 +26,7 @@ start(){
 	}
 
 	get_response_from_ct () {
-		wan_name=`/sbin/uci -P/var/state get network.wan.ifname`
+	  wan_name=`/sbin/uci -P/var/state get network.wan.ifname`
 	  wan_mac=`/sbin/ifconfig $wan_name | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}'`
 	  serial=`date`
 	  response=`curl --connect-timeout 5 -d "serial=$serial&mac=$wan_mac" https://api.polkaspots.com/api/v1/nas/status -k` 

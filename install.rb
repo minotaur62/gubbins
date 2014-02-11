@@ -25,7 +25,7 @@ class Installer
   end
 
   def base_url
-    'https://raw2.github.com/minotaur62/gubbins/master'
+    'https://s3-eu-west-1.amazonaws.com/ps-openwrt-configs/1.3/production/scripts'
   end
 
 end
