@@ -11,7 +11,8 @@ class Installer
       "functions.rb" => '/etc/scripts/functions.rb',
       "iwinfo.sh" => '/etc/scripts/iwinfo.sh',
       "iwdump.sh" => '/etc/scripts/iwdump.sh',
-      "airodump.sh" => '/etc/scripts/airodump.sh'
+      "airodump.sh" => '/etc/scripts/airodump.sh',
+      "polkaspots" => '/etc/init.d/polkaspots'
     }
   end
 
