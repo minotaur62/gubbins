@@ -7,12 +7,12 @@ class Installer
 
   def files
     files = {
-      "gubbins.rb" => '/etc/scripts/gubbins.rb',
-      "functions.rb" => '/etc/scripts/functions.rb',
-      "iwinfo.sh" => '/etc/scripts/iwinfo.sh',
-      "iwdump.sh" => '/etc/scripts/iwdump.sh',
-      "airodump.sh" => '/etc/scripts/airodump.sh',
-      "polkaspots" => '/etc/init.d/polkaspots'
+      "scripts/gubbins.rb" => '/etc/scripts/gubbins.rb',
+      "scripts/functions.rb" => '/etc/scripts/functions.rb',
+      "scripts/iwinfo.sh" => '/etc/scripts/iwinfo.sh',
+      "scripts/iwdump.sh" => '/etc/scripts/iwdump.sh',
+      "scripts/airodump.sh" => '/etc/scripts/airodump.sh',
+      "init.d/polkaspots" => '/etc/init.d/polkaspots'
     }
   end
 
@@ -25,7 +25,7 @@ class Installer
   end
 
   def base_url
-    'https://s3-eu-west-1.amazonaws.com/ps-openwrt-configs/1.3/production/scripts'
+    'https://s3-eu-west-1.amazonaws.com/ps-openwrt-configs/1.3/production'
   end
 
 end

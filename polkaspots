@@ -6,6 +6,11 @@ start(){
     base_url=https://s3-eu-west-1.amazonaws.com/ps-openwrt-configs
 
 	run_gubbins( ) {
+
+        base_url=https://s3-eu-west-1.amazonaws.com/ps-openwrt-configs
+        
+	run_gubbins ( ) {
+
 	 /usr/bin/ruby /etc/scripts/gubbins.rb &
 	}
 
