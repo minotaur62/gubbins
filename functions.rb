@@ -83,7 +83,7 @@ def get_sync
 end
 
 def chilli_list
-  system `chilli_query list | awk '{print $1 "%20" $2 "%20" $3 "%20" $4 "%20" $6 "%20" $8 "%20" $9}' > /tmp/chilli_list`
+  system `chilli_query list | awk '{printf ("%s,", $1 "%20" $2 "%20" $3 "%20" $4 "%20" $6 "%20" $8 "%20" $9)}' > /tmp/chilli_list`
   hash = File.open("/tmp/chilli_list", "rb").read
   return hash
   hash.close

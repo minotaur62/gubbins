@@ -39,7 +39,7 @@ class GoGoGubbins
       gz.write data
       gz.close
     end
-    heartbeat = system("curl --silent --connect-timeout 5 -F data=@data.gz -F 'mac=#{$wan_mac}' http://192.168.20.46/api/v1/nas/gubbins")
+    heartbeat = system("curl --silent --connect-timeout 5 -F data=@data.gz -F 'mac=#{$wan_mac}' https://api.polkaspots.com/api/v1/nas/gubbins")
     system 'rm -rf /tmp/gubbins.lock'
   end
 
