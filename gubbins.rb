@@ -34,12 +34,11 @@ class GoGoGubbins
     @iwdump = iwdump('wlan0-1')
     @scan = airodump
     data = "{\"data\":{\"serial\":\"#{$serial}\",\"ip\":\"#{@tun_ip}\",\"lmac\":\"#{$lan_mac}\",\"system\":\"#{$system_type}\",\"machine_type\":\"#{$machine_type}\",\"wan_ip\":\"#{get_wan_ip($wan_name)}\",\"uptime\":\"#{}\",\"sync\":\"#{@sync}\",\"version\":\"#{$version}\",\"chilli\":\"#{chilli_list}\"},\"iwinfo\":#{@iwinfo},\"iwdump\":#{@iwdump}}"
-    puts data
-    Zlib::GzipWriter.open('data.gz') do |gz|
+      Zlib::GzipWriter.open('data.gz') do |gz|
       gz.write data
       gz.close
     end
-    heartbeat = system("curl --silent --connect-timeout 5 -F data=@data.gz -F 'mac=#{$wan_mac}' https://api.polkaspots.com/api/v1/nas/gubbins -k")
+    system("curl --silent --connect-timeout 5 -F data=@data.gz -F 'mac=#{$wan_mac}' https://api.polkaspots.com/api/v1/nas/gubbins -k")
     system 'rm -rf /tmp/gubbins.lock'
   end
 
