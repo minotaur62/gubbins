@@ -4,10 +4,6 @@ start(){
 	source  /usr/share/libubox/jshn.sh
 	version=1.3
         base_url=https://s3-eu-west-1.amazonaws.com/ps-openwrt-configs
-
-	run_gubbins( ) {
-
-        base_url=https://s3-eu-west-1.amazonaws.com/ps-openwrt-configs
         
 	run_gubbins ( ) {
 
