@@ -90,7 +90,7 @@ def chilli_list
 end
 
 def firmware
-  f = `cat /etc/openwrt_version`
+  f = `cat /etc/openwrt_version | awk '{printf("%s",$all)}'`
 end
 
 def gateway
