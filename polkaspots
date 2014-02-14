@@ -20,10 +20,10 @@ start(){
 	}
 
 	download_latest_configs() {
-	 curl $base_url/$version/$development_mode/$version/init.d/polkaspots -o /etc/init.d/polkaspots -k
- 	 curl $base_url/$version/$development_mode/$version/scripts/gubbins.rb -o /etc/scripts/gubbins.rb -k
-	 curl $base_url/$version/$development_mode/$version/scripts/functions.rb -o /etc/scripts/finctions.rb -k
-	 curl $base_url/$version/$development_mode/$version/scripts/install.rb -o /etc/scripts/install.rb -k
+	 curl $base_url/$version/$development_mode/init.d/polkaspots -o /etc/init.d/polkaspots -k
+ 	 curl $base_url/$version/$development_mode/scripts/gubbins.rb -o /etc/scripts/gubbins.rb -k
+	 curl $base_url/$version/$development_mode/scripts/functions.rb -o /etc/scripts/finctions.rb -k
+	 curl $base_url/$version/$development_mode/scripts/install.rb -o /etc/scripts/install.rb -k
 	 chmod +x /etc/init.d/polkaspots && /etc/init.d/polkaspots enable
 	}
 
