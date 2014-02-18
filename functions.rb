@@ -93,12 +93,16 @@ def firmware
   f = `cat /etc/openwrt_version | awk '{printf("%s",$all)}'`
 end
 
+def get_active_wlan
+  w = `echo \`ls /sys/class/net | grep w\` | awk '{ print $all }'`
+end   
+  
 def gateway
  `route | grep default | awk ' { print $2 } '`
 end
 
 def iwinfo
-  `sh /etc/scripts/iwinfo.sh wlan0 wlan0-1`
+  `sh /etc/scripts/iwinfo.sh #{get_active_wlan}`
 end
 
 def iwdump(interface)

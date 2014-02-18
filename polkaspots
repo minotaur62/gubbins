@@ -20,11 +20,8 @@ start(){
 	}
 
 	download_latest_configs() {
-	 curl $base_url/$version/$development_mode/init.d/polkaspots -o /etc/init.d/polkaspots -k
-	 curl $base_url/$version/$development_mode/scripts/gubbins.rb -o /etc/scripts/gubbins.rb -k
-	 curl $base_url/$version/$development_mode/scripts/functions.rb -o /etc/scripts/functions.rb -k
 	 curl $base_url/$version/$development_mode/scripts/install.rb -o /etc/scripts/install.rb -k
-	 chmod +x /etc/init.d/polkaspots && /etc/init.d/polkaspots enable
+	 /etc/init.d/polkaspots enable
 	 chmod +x /etc/scripts/*
 	 ruby /etc/scripts/install.rb &
 	}
