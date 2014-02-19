@@ -105,8 +105,8 @@ def iwinfo
   `sh /etc/scripts/iwinfo.sh #{get_active_wlan}`
 end
 
-def iwdump(interface)
-  `sh /etc/scripts/iwdump.sh`
+def iwdump
+  `sh /etc/scripts/iwdump.sh #{get_active_wlan}`
 end
 
 def airodump

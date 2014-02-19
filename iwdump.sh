@@ -3,7 +3,9 @@
 # Script name : iwdump
 # /etc/scripts/iwdump.sh
 
-iw dev wlan0 station dump > /tmp/connected_clients
+get_iwdump() {
+
+iw dev $interface station dump > /tmp/connected_clients
 #if [[ -s /tmp/wireless_clients ]] ; then
 #echo "NO clients connected so file is empty"
 #fi
@@ -39,14 +41,24 @@ sed -i 's/)//g' /tmp/connected_clients
 sed -i 's/Station\+/\n&/g' /tmp/connected_clients
 sed -i '/^\s*$/d' /tmp/connected_clients
 
-source /usr/share/libubox/jshn.sh
-json_init
+
 while read line
 do
 print_station_mac=`echo $line | grep Station | awk '{print $2}'`
 print_single_line=`echo $line | awk '{for (i = 5; i <= NF; i++) printf $i "," }'`
-json_add_string "$print_station_mac" "$print_single_line"
+echo $print_station_mac,$print_single_line
 done < /tmp/connected_clients
+rm -rf /tmp/connected_clients
+}
+
+source /usr/share/libubox/jshn.sh
+json_init
+for var in "$@"
+do
+interface=`echo $var`
+result=$(get_iwdump $interface)
+json_add_string "$var" "$result"
+done	
 MSG=`json_dump`
 echo $MSG
-rm -rf /tmp/connected_clients
+
