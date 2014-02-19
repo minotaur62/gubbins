@@ -3,7 +3,7 @@
 # Use this, change things but don't claim it's yours
 
 def get_wan_name
-  return `/sbin/uci -P/var/state get network.wan.ifname`
+  return `/sbin/uci -P/var/state get network.wan.ifname | awk '{printf("%s",$all)}'`
 end
 
 def get_wan_ip(device)
