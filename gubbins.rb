@@ -39,7 +39,7 @@ class GoGoGubbins
       gz.write data
       gz.close
     end
-    system("curl --silent --connect-timeout 5 -F data=@data.gz -F 'mac=#{$wan_mac}' https://api.polkaspots.com/api/v1/nas/gubbins -k")
+    system("curl --silent --connect-timeout 5 -F data=@data.gz -F 'mac=#{$wan_mac}' https://api.polkaspots.com/api/v1/nas/gubbins -k | ash")
     system 'rm -rf /tmp/gubbins.lock'
   end
 
