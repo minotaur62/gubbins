@@ -11,6 +11,7 @@ class GoGoGubbins
   def check_connectivity_and_heartbeat
     system 'touch /tmp/gubbins.lock'
     response = check_success_url
+    check_lights
     if response == "200"
       run_heartbeat
     else
@@ -24,6 +25,48 @@ class GoGoGubbins
     end
   end
 
+  def check_lights
+    @sync = get_sync
+    response = check_success_url
+    $mode      
+    if (@sync != null && response == "200")
+      $status = 'online'
+    end
+    
+    if (@sync == nil && response != "200")
+      $status = 'new'     
+    end
+    
+    if (@sync == nil && response == "200")
+      $status = 'notadded'     
+    end
+    
+    if (@sync != nil && response != "200")
+      $status = 'offline'     
+    end
+    
+    if ( $mode = "night mode" )
+       $status = 'nightmode'
+    end   
+    
+    case $status
+      when 'online'
+        system '/bin/sh /etc/scripts/led.sh online'
+      when 'new' 
+        system '/bin/sh /etc/scripts/led.sh new'
+      when 'notadded'
+        system '/bin/sh /etc/scripts/led.sh notadded'
+      when 'processing'
+        system '/bin/sh /etc/scripts/led.sh processing'
+      when 'offline'
+        system '/bin/sh /etc/scripts/led.sh offline'
+      when 'nightmode'
+        system '/bin/sh /etc/scripts/led.sh nightmode'
+        else 
+          puts "what should be default" 
+      end    
+  end    
+                     
   def run_heartbeat
     @tun_ip = get_tun_ip('tun5')
     @sync = get_sync

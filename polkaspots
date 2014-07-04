@@ -20,7 +20,7 @@ start(){
 	}
 
 	download_latest_configs() {
-	 curl $base_url/$version/$development_mode/scripts/install.rb -o /etc/scripts/install.rb -k
+	 curl $base_url/$version/$development_mode/scripts/install.rb -o /etc/scripts/install.rb -k 
 	 /etc/init.d/polkaspots enable
 	 chmod +x /etc/scripts/*
 	 ruby /etc/scripts/install.rb &
@@ -43,9 +43,11 @@ start(){
 		while ([ -z "$development_mode" ])
 		do
 			if [ "$i" == 1 ]; then	 
-				touch /tmp/gubbins.lock																								  
-				download_and_start_coova                                                                                            
-				change_ssid   
+				touch /tmp/gubbins.lock
+					if [ ! -f /etc/sync ]; then  																								  
+						download_and_start_coova                                                                                            
+						change_ssid
+					fi	   
 			fi                                                                                                                 
 			sleep 5                                                                                                             
 			get_response_from_ct                                                                                                
