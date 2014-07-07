@@ -59,7 +59,7 @@ end
 
 def uptime
  f = `uptime`
- return f.gsub(" ", "%20")
+ return f.gsub(/\s/, "%20")
 end
 
 def get_serial
