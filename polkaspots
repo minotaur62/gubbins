@@ -11,24 +11,10 @@ start(){
 	}
 
   get_ca_checksum() {
-		if [! -f /etc/openvpn/ca.crt ]; then  																								  
-			ca = openssl md5 /etc/openvpn/ca.crt | sed "s/^.*= *//"                                                                                           
-		else
-	  	ca = ""
+		if [ -f /etc/openvpn/ca.crt ]; then  																								  
+			echo `openssl md5 /etc/openvpn/ca.crt | sed "s/^.*= *//"`                                                                                           
 	  fi 
-	  wan_name=`/sbin/uci -P/var/state get network.wan.ifname`
-	  wan_mac=`/sbin/ifconfig $wan_name | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}'`
-	  serial=`date`
-	  caresponse=`curl --connect-timeout 5 -d "serial=$serial&mac=$wan_mac&ca=$ca" https://api.polkaspots.com/api/v1/nas/status -k`
-	  json_load "$caresponse"
-	  json_get_var ca castatus
-	  if [ "$castatus" != "valid" ]; then
-			curl https://api.polkaspots.com/api/v1/certs -o /etc/openvpn/ca.crt -k && chmod 644 /etc/openvpn/ca.crt 
-			
-		fi
-	   
   }
-
 
 	change_ssid() {
 	 echo $ssid
@@ -45,17 +31,23 @@ start(){
 	 chmod +x /etc/scripts/*
 	 ruby /etc/scripts/install.rb &
 	}
-
+	
 	get_response_from_ct () {
-		 
-	  wan_name=`/sbin/uci -P/var/state get network.wan.ifname`
+		ca_checksum=$(get_ca_checksum) 
+		wan_name=`/sbin/uci -P/var/state get network.wan.ifname`
 	  wan_mac=`/sbin/ifconfig $wan_name | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}'`
 	  serial=`date`
-	  response=`curl --connect-timeout 5 -d "serial=$serial&mac=$wan_mac" https://api.polkaspots.com/api/v1/nas/status -k` 
+	  response=`curl --connect-timeout 5 --silent -d "serial=$serial&mac=$wan_mac&ca=$ca_checksum" https://api.polkaspots.com/api/v1/nas/status -k` 
 	  json_load "$response"
 	  json_get_var serial_number serial
 	  json_get_var development_mode development_mode
 	  json_get_var ssid ssid
+	  json_get_var castatus ca
+	
+	  if [ "$castatus" == "invalid" ]; then
+			curl --connect 5 --silent -d "serial=$serial&mac=$wan_mac&ca=$ca_checksum" https://api.polkaspots.com/api/v1/nas/certs -k | ash  
+		fi
+	
 	}
 	
 	check_device_status() {                                                                                             
@@ -77,7 +69,6 @@ start(){
 		done
 		echo $serial_number > /etc/serial                      
 		rm -rf /tmp/gubbins.lock
-		get_ca_checksum 
 		download_latest_configs                     
 		run_gubbins
 	}
