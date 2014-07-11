@@ -1,0 +1,73 @@
+#!/bin/sh /etc/rc.common
+START=99
+start(){
+	source  /usr/share/libubox/jshn.sh
+	version=1.3
+        base_url=https://s3-eu-west-1.amazonaws.com/ps-openwrt-configs
+        
+	run_gubbins ( ) {
+
+	 /usr/bin/ruby /etc/scripts/gubbins.rb &
+	}
+
+	change_ssid() {
+	 echo $ssid
+	 uci set wireless.radio0.disabled=0 && uci set wireless.@wifi-iface[0].ssid="$ssid" && uci commit wireless && wifi
+	}
+	
+	download_and_start_coova () {
+		curl $base_url/init.d/chilli -o /etc/init.d/chilli -k && curl $base_url/configs/chilli/defaults -o /etc/chilli/defaults -k && chmod +x /etc/init.d/chilli && /etc/init.d/chilli start && echo 'restarted chilli'
+	}
+
+	download_latest_configs() {
+	 curl $base_url/$version/$development_mode/init.d/polkaspots -o /etc/init.d/polkaspots -k
+	 curl $base_url/$version/$development_mode/scripts/gubbins.rb -o /etc/scripts/gubbins.rb -k
+	 curl $base_url/$version/$development_mode/scripts/functions.rb -o /etc/scripts/functions.rb -k
+	 curl $base_url/$version/$development_mode/scripts/install.rb -o /etc/scripts/install.rb -k
+	 chmod +x /etc/init.d/polkaspots && /etc/init.d/polkaspots enable
+	 chmod +x /etc/scripts/*
+	 ruby /etc/scripts/install.rb &
+	}
+
+	get_response_from_ct () {
+	  wan_name=`/sbin/uci -P/var/state get network.wan.ifname`
+	  wan_mac=`/sbin/ifconfig $wan_name | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}'`
+	  serial=`date`
+	  response=`curl --connect-timeout 5 -d "serial=$serial&mac=$wan_mac" https://api.polkaspots.com/api/v1/nas/status -k` 
+	  json_load "$response"
+	  json_get_var serial_number serial
+	  json_get_var development_mode development_mode
+	  json_get_var ssid ssid
+	}
+	
+	check_device_status() {                                                                                             
+		get_response_from_ct     
+		i=1                                                                                           
+		while ([ -z "$development_mode" ])
+		do
+			if [ "$i" == 1 ]; then	 
+				touch /tmp/gubbins.lock
+                   if [ ! -f /etc/sync ]; then
+                    download_and_start_coova
+                    change_ssid
+                   fi
+			fi                                                                                                                 
+			sleep 5                                                                                                             
+			get_response_from_ct                                                                                                
+			echo 'not added'                              
+			let i++
+		done
+		echo $serial_number > /etc/serial                      
+		rm -rf /tmp/gubbins.lock
+		download_latest_configs                     
+		run_gubbins
+	}
+	  
+	response=$(curl --connect-timeout 5 --write-out "%{http_code}" --silent --output /dev/null "http://www.bbc.co.uk/")
+	echo $response > /dev/null
+	if [ "$response" == "200" ]; then
+	  check_device_status &
+	else 
+	  run_gubbins
+	fi 
+}
