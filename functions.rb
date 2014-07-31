@@ -101,6 +101,18 @@ def gateway
  `route | grep default | awk ' { print $2 } '`
 end
 
+
+def get_prefs
+ file="/tmp/prefs"
+  if File.file?(file)
+   ntype=`cat prefs | awk -v k="text" '{n=split($0,a,","); for (i=1; i<=n; i++) print a[i]}' |sed 's/\"\:\"/\|/g' | sed 's/[\,]/ /g' | sed 's/\"//g' | grep -w ntype | cut -d":" -f3|  sed -e 's/^ *//g' -e 's/ *$//g'`			
+  end
+   if ntype.include? "static"  
+    pref = `cat prefs |  sed 's/[{}]//g' |  sed 's/\"//g' | sed 's/ //g'`
+    pref.gsub("\n","") 
+   end
+end
+ 
 def iwinfo
   `sh /etc/scripts/iwinfo.sh #{get_active_wlan}`
 end
