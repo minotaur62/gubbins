@@ -78,7 +78,7 @@ class GoGoGubbins
     @firmware = firmware
     @scan = airodump
     @prefs= get_prefs
-    data = "{\"data\":{\"serial\":\"#{$serial}\",\"ip\":\"#{@tun_ip}\",\"lmac\":\"#{$lan_mac}\",\"system\":\"#{$system_type}\",\"machine_type\":\"#{$machine_type}\",\"firmware\":\"#{@firmware}\",\"wan_interface\":\"#{$wan_name}\",\"wan_ip\":\"#{get_wan_ip($wan_name)}\",\"uptime\":\"#{uptime}\",\"sync\":\"#{@sync}\",\"version\":\"#{$version}\",\"chilli\":\"#{chilli_list}\",\"prefs\":\"#{@prefs}\"},\"iwinfo\":#{@iwinfo},\"iwdump\":#{@iwdump}}"
+    data = "{\"data\":{\"serial\":\"#{$serial}\",\"ip\":\"#{@tun_ip}\",\"lmac\":\"#{$lan_mac}\",\"system\":\"#{$system_type}\",\"machine_type\":\"#{$machine_type}\",\"firmware\":\"#{@firmware}\",\"wan_interface\":\"#{$wan_name}\",\"wan_ip\":\"#{get_wan_ip($wan_name)}\",\"uptime\":\"#{uptime}\",\"sync\":\"#{@sync}\",\"version\":\"#{$version}\",\"chilli\":\"#{chilli_list}\",\"prefs\":#{@prefs}},\"iwinfo\":#{@iwinfo},\"iwdump\":#{@iwdump}}"
       Zlib::GzipWriter.open('/tmp/data.gz') do |gz|
       gz.write data
       gz.close

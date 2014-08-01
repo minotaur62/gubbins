@@ -105,12 +105,11 @@ end
 def get_prefs
  file="/etc/prefs"
   if File.file?(file)
-   ntype=`cat /etc/prefs | awk -v k="text" '{n=split($0,a,","); for (i=1; i<=n; i++) print a[i]}' |sed 's/\"\:\"/\|/g' | sed 's/[\,]/ /g' | sed 's/\"//g' | grep -w ntype | cut -d":" -f3|  sed -e 's/^ *//g' -e 's/ *$//g'`			
-  end
-   if ntype.include? "static"  
-    pref = `cat /etc/prefs |  sed 's/[{}]//g' |  sed 's/\"//g' | sed 's/ //g'`
+    pref = `cat /etc/prefs`
     pref.gsub("\n","") 
-   end
+  else 
+    return '"file not exists"'  
+  end 
 end
  
 def iwinfo
