@@ -10,9 +10,17 @@ start(){
 	 /usr/bin/ruby /etc/scripts/gubbins.rb &
 	}
 
+<<<<<<< HEAD
   get_ca_checksum() {
 		if [ -f /etc/openvpn/ca.crt ]; then  																								  
 			echo `openssl md5 /etc/openvpn/ca.crt | sed "s/^.*= *//"`                                                                                           
+=======
+         get_ca_checksum() {
+		if [! -f /etc/openvpn/ca.crt ]; then  																								  
+			ca = openssl md5 /etc/openvpn/ca.crt | sed "s/^.*= *//"                                                                                           
+		else
+	  	ca = ""
+>>>>>>> f8c4bab436b792ec55db7f5aa84846d577a7f7bb
 	  fi 
   }
 
