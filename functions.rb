@@ -57,9 +57,12 @@ def get_system_type
  return f.split[0..1].join " "
 end
 
-def uptime
- f = `uptime`
- return f.gsub(/\s/, "%20")
+def uptime                                             
+    f = `uptime`                                       
+    uptime = f.gsub(" ", "%20").gsub("\n","")          
+    seconds = `cat /proc/uptime`                       
+    seconds = seconds.split(' ').first.gsub("\n","")   
+    return "#{uptime}, #{seconds}"                     
 end
 
 def get_serial
@@ -112,6 +115,35 @@ def get_prefs
     pref.gsub("\n","") 
    end
 end
+
+def ca_checksum                                                                                                                   
+  file = "/etc/openvpn/ca.crt"                                                                                                    
+  if File.file?(file)                                                                                                             
+    cksum = `openssl md5 /etc/openvpn/ca.crt | sed "s/^.*= *//"`                                                                  
+    cksum.gsub("\n","")                                                                                                           
+  end                                                                                                                             
+end
+
+def get_icmp_response(ip)
+ `ping  -c 1 #{ip}`
+ if $? == 0
+   return success
+ else   
+  return failure
+ end      
+end 
+ 
+def log_interface_change
+  `dmesg | awk -F ] '{"cat /proc/uptime | cut -d \" \" -f 1" | getline st;a=substr( $1,2,length($1) - 1);print strftime("%F %H:%M:%S %Z",systime()-st+a)" -> "$0}' | grep  eth1 | tail -1 | awk ' { print $all  }' >> /etc/status`
+end  
+ 
+def log_lost_ip
+  `echo `date` lost ip address  >> /etc/status`  
+end 
+ 
+def log_gateway_failure
+  `echo `date` Cannot ping to gateway >> /etc/status`
+end  
  
 def iwinfo
   `sh /etc/scripts/iwinfo.sh #{get_active_wlan}`
