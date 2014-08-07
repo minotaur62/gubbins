@@ -9,7 +9,7 @@ require 'zlib'
 class GoGoGubbins
   
   def api_url                                        
-      "https://api.polkaspots.com"                     
+      "http://3ce87f37.ngrok.com"                     
   end
 
   def health_url                                     
@@ -72,7 +72,8 @@ class GoGoGubbins
                 end     
              end     
           end 
-      end 
+      end
+    end    
    end       
 
           
@@ -80,7 +81,7 @@ class GoGoGubbins
     @sync = get_sync
     response = check_success_url
     $mode      
-    if (@sync != null && response == "200")
+    if (@sync != nil && response == "200")
       $status = 'online'
     end
     
@@ -96,7 +97,7 @@ class GoGoGubbins
       $status = 'offline'     
     end
     
-    if ( $mode = "night mode" )
+    if ( $mode == "night mode" )
        $status = 'nightmode'
     end   
     
@@ -130,12 +131,18 @@ class GoGoGubbins
     @scan = airodump
     @ca = ca_checksum
     @prefs= get_prefs
-    data = "{\"data\":{\"serial\":\"#{$serial}\",\"ip\":\"#{@tun_ip}\",\"lmac\":\"#{$lan_mac}\",\"system\":\"#{$system_type}\",\"machine_type\":\"#{$machine_type}\",\"firmware\":\"#{@firmware}\",\"wan_interface\":\"#{$wan_name}\",\"wan_ip\":\"#{get_wan_ip($wan_name)}\",\"uptime\":\"#{uptime}\",\"sync\":\"#{@sync}\",\"version\":\"#{$version}\",\"chilli\":\"#{chilli_list}\",\"prefs\":\"#{@prefs}\",\"iwinfo\":#{@iwinfo},\"iwdump\":#{@iwdump}}"
+    @logs=read_logfile
+    data = "{\"data\":{\"serial\":\"#{$serial}\",\"ip\":\"#{@tun_ip}\",\"lmac\":\"#{$lan_mac}\",\"system\":\"#{$system_type}\",\"machine_type\":\"#{$machine_type}\",\"firmware\":\"#{@firmware}\",\"wan_interface\":\"#{$wan_name}\",\"wan_ip\":\"#{get_wan_ip($wan_name)}\",\"uptime\":\"#{uptime}\",\"sync\":\"#{@sync}\",\"version\":\"#{$version}\",\"chilli\":\"#{chilli_list}\",\"logs\":\"#{@logs}\",\"prefs\":#{@prefs}}, \"iwinfo\":#{@iwinfo},\"iwdump\":#{@iwdump}}"
       Zlib::GzipWriter.open('/tmp/data.gz') do |gz|
       gz.write data
       gz.close
     end
+    puts data
     system("curl --silent --connect-timeout 5 -F data=@/tmp/data.gz -F 'mac=#{$wan_mac}' -F 'ca=#{@ca}' #{api_url}/api/v1/nas/gubbins -k | ash")
+   if $? == 0
+    `rm -rf /etc/status`
+   end
+    
     system 'rm -rf /tmp/gubbins.lock'
   end
 

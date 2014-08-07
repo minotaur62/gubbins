@@ -108,12 +108,11 @@ end
 def get_prefs
  file="/etc/prefs"
   if File.file?(file)
-   ntype=`cat /etc/prefs | awk -v k="text" '{n=split($0,a,","); for (i=1; i<=n; i++) print a[i]}' |sed 's/\"\:\"/\|/g' | sed 's/[\,]/ /g' | sed 's/\"//g' | grep -w ntype | cut -d":" -f3|  sed -e 's/^ *//g' -e 's/ *$//g'`			
-  end
-   if ntype.include? "static"  
-    pref = `cat /etc/prefs |  sed 's/[{}]//g' |  sed 's/\"//g' | sed 's/ //g'`
+    pref = `cat /etc/prefs`
     pref.gsub("\n","") 
-   end
+  else 
+  return '"not exists"'
+  end
 end
 
 def ca_checksum                                                                                                                   
@@ -123,6 +122,14 @@ def ca_checksum
     cksum.gsub("\n","")                                                                                                           
   end                                                                                                                             
 end
+
+def read_logfile
+  file = "/etc/status"
+  if File.file?(file)
+    log =`cat /etc/status`
+    log.gsub("\n",",")
+  end
+end 
 
 def get_icmp_response(ip)
  `ping  -c 1 #{ip}`
@@ -138,11 +145,11 @@ def log_interface_change
 end  
  
 def log_lost_ip
-  `echo `date` lost ip address  >> /etc/status`  
+  `echo \`date\` lost ip address  >> /etc/status`  
 end 
  
 def log_gateway_failure
-  `echo `date` Cannot ping to gateway >> /etc/status`
+  `echo \`date\` Cannot ping to gateway >> /etc/status`
 end  
  
 def iwinfo
