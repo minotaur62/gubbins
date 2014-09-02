@@ -45,6 +45,10 @@ class GoGoGubbins
       if(change == 2)
        log_interface_change
       end
+        string = File.open('/etc/prefs', 'rb') { |file| file.read }
+         if ((!string.include ? "static") && (change == 5))
+           system `rm -rf /etc/network && /rom/etc/uci-defaults/02_network`
+         end      
       check_status(1) 
       else 
       @wan_ip = get_wan_ip(get_wan_name)
@@ -75,7 +79,7 @@ class GoGoGubbins
       end
     end    
    end       
-
+  
           
   def check_lights
     @sync = get_sync
@@ -83,40 +87,28 @@ class GoGoGubbins
     $mode      
     if (@sync != nil && response == "200")
       $status = 'online'
+       system '/bin/sh /etc/scripts/led.sh online'
     end
     
     if (@sync == nil && response != "200")
-      $status = 'new'     
+      $status = 'new' 
+      system '/bin/sh /etc/scripts/led.sh new'    
     end
     
     if (@sync == nil && response == "200")
-      $status = 'notadded'     
+      $status = 'notadded'
+      system '/bin/sh /etc/scripts/led.sh notadded'     
     end
     
     if (@sync != nil && response != "200")
-      $status = 'offline'     
+      $status = 'offline'
+      system '/bin/sh /etc/scripts/led.sh offline'     
     end
     
     if ( $mode == "night mode" )
        $status = 'nightmode'
+       system '/bin/sh /etc/scripts/led.sh nightmode'
     end   
-    
-    case $status
-      when 'online'
-        system '/bin/sh /etc/scripts/led.sh online'
-      when 'new' 
-        system '/bin/sh /etc/scripts/led.sh new'
-      when 'notadded'
-        system '/bin/sh /etc/scripts/led.sh notadded'
-      when 'processing'
-        system '/bin/sh /etc/scripts/led.sh processing'
-      when 'offline'
-        system '/bin/sh /etc/scripts/led.sh offline'
-      when 'nightmode'
-        system '/bin/sh /etc/scripts/led.sh nightmode'
-        else 
-          puts "what should be default" 
-      end    
   end    
                      
   def run_heartbeat
