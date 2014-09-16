@@ -9,7 +9,7 @@ require 'zlib'
 class GoGoGubbins
   
   def api_url                                        
-      "http://3ce87f37.ngrok.com"                     
+      "https://api.polkaspots.com"                     
   end
 
   def health_url                                     
@@ -19,7 +19,6 @@ class GoGoGubbins
   def check_connectivity_and_heartbeat
     system 'touch /tmp/gubbins.lock'
     response = check_success_url
-    check_lights
     if ["200", "201", "404", "500"].include? response 
       run_heartbeat
     else
@@ -34,7 +33,7 @@ class GoGoGubbins
       end
     end
   end
-end
+
 
   def externel_server
     return "8.8.8.8"
@@ -65,6 +64,7 @@ end
         end
            
        if static_dynamic == "dynamic" && change == 5
+         `logger network file changed`
          `rm -rf /etc/network && /rom/etc/uci-defaults/02_network`
          end    
        end 
@@ -88,14 +88,17 @@ end
      es_response = get_icmp_response(externel_server)
      if es_response != "success"
        if change == 2
+         `logger changing the login screens`
          `kilall chilli && cp /etc/chilli/default /etc/chilli/online  && cp /etc/chilli/no_internet /etc/chilli/defaults && /etc/init.d/chilli restart`
-       end       
-     else 
+       end
+       `logger cannot communicate to external server`       
+      else 
+       `logger got the internet connection now`
        $live  = true 
        return $live
      end    
   end       
-     
+end     
                      
   def run_heartbeat
     @tun_ip = get_tun_ip('tun5')
@@ -119,13 +122,15 @@ end
     system("curl --silent --connect-timeout 5 -F data=@/tmp/data.gz -F 'mac=#{$wan_mac}' -F 'ca=#{@ca}' #{api_url}/api/v1/nas/gubbins -k | ash")
    if $? == 0
     `rm -rf /etc/status`
+   end  
     system 'rm -rf /tmp/gubbins.lock'
   end
-
+  
   def check_success_url                                                                                                                                
       %x{curl --connect-timeout 5 --write-out "%{http_code}" --silent --output /dev/null "#{health_url}"}                                                
   end
-
+   
+end 
 
 if File.exists?('/tmp/gubbins.lock') && File.ctime('/tmp/gubbins.lock') > (Time.now - 60)
   puts "Already testing the connectivity"
