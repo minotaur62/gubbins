@@ -71,13 +71,19 @@ def get_serial
 end
 
 def get_nvs
- f = `cat /etc/nvs`
- return f.split("\n").first
+ file="/etc/nvs"
+ if File.file?(file)  
+   f = `cat /etc/nvs`
+   return f.split("\n").first
+  end 
 end
 
 def get_wvs
- f = `cat /etc/wvs`
- return f.split("\n").first
+ file="/etc/wvs"
+ if File.file?(file)   
+   f = `cat /etc/wvs`
+   return f.split("\n").first
+ end   
 end
 
 def get_sync
@@ -134,9 +140,9 @@ end
 def get_icmp_response(ip)
  `ping  -c 1 #{ip}`
  if $? == 0
-   return success
+   return "success"
  else   
-  return failure
+  return "failure""
  end      
 end 
  

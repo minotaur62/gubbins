@@ -39,77 +39,63 @@ class GoGoGubbins
     return "8.8.8.8"
   end  
   
+  def static_dynamic
+    @prefs= get_prefs
+    if @prefs != '"not exists"' 
+      string = File.open('/etc/prefs', 'rb') { |file| file.read }
+      if string.include?("static")
+         return "static"
+      end
+    else  
+     return "dynamic"    
+    end 
+  end 
+  
+  def change_back
+    puts "Make sure all the config is restored"
+  end   
+            
   def check_status(change)
     @wan_status = wan_status
-    if (@wan_status != "up")
-      if(change == 2)
-       log_interface_change
-      end
-        string = File.open('/etc/prefs', 'rb') { |file| file.read }
-         if ((!string.include ? "static") && (change == 5))
-           system `rm -rf /etc/network && /rom/etc/uci-defaults/02_network`
-         end      
-      check_status(1) 
-      else 
+    if @wan_status != "up" 
+      if change == 2
+        `logger Wan interface is Down`
+        log_interface_change
+        end
+           
+       if static_dynamic == "dynamic" && change == 5
+         `rm -rf /etc/network && /rom/etc/uci-defaults/02_network`
+         end    
+       end 
+            
       @wan_ip = get_wan_ip(get_wan_name)
       wan_response = get_icmp_response(@wan_ip)
-      if (result != "success" )
-        if (change == 2)
-         log_lost_ip
+      if wan_response != "success"
+        if change == 2
+          log_lost_ip
         end
-        else
-          @gateway = gateway
-          gw_response = get_icmp_response(@gateway)
-          if(gw_response != "success")
-            if(change == 2)
-             log_gateway_failure
-            end
-            else
-               es_response = get_icmp_response(externel_server)
-               if (es_response != "success")
-                 if (change == 2)
-                 system`kilall chilli && cp /etc/chilli/default /etc/chilli/online  && cp /etc/chilli/no_internet /etc/chilli/defaults && /etc/init.d/chilli restart`   
-                 end
-              else 
-                $live  = true 
-                return $live
-                end     
-             end     
-          end 
-      end
-    end    
-   end       
-  
-          
-  def check_lights
-    @sync = get_sync
-    response = check_success_url
-    $mode      
-    if (@sync != nil && response == "200")
-      $status = 'online'
-       system '/bin/sh /etc/scripts/led.sh online'
-    end
-    
-    if (@sync == nil && response != "200")
-      $status = 'new' 
-      system '/bin/sh /etc/scripts/led.sh new'    
-    end
-    
-    if (@sync == nil && response == "200")
-      $status = 'notadded'
-      system '/bin/sh /etc/scripts/led.sh notadded'     
-    end
-    
-    if (@sync != nil && response != "200")
-      $status = 'offline'
-      system '/bin/sh /etc/scripts/led.sh offline'     
-    end
-    
-    if ( $mode == "night mode" )
-       $status = 'nightmode'
-       system '/bin/sh /etc/scripts/led.sh nightmode'
-    end   
-  end    
+      end   
+                 
+     @gateway = gateway
+     gw_response = get_icmp_response(@gateway)
+     if gw_response != "success" 
+       if change == 2
+         log_gateway_failure
+       end 
+     end             
+      
+     es_response = get_icmp_response(externel_server)
+     if es_response != "success"
+       if change == 2
+         `kilall chilli && cp /etc/chilli/default /etc/chilli/online  && cp /etc/chilli/no_internet /etc/chilli/defaults && /etc/init.d/chilli restart`
+       end
+     end       
+     else 
+       $live  = true 
+       return $live
+     end    
+  end       
+     
                      
   def run_heartbeat
     @tun_ip = get_tun_ip('tun5')
@@ -133,8 +119,6 @@ class GoGoGubbins
     system("curl --silent --connect-timeout 5 -F data=@/tmp/data.gz -F 'mac=#{$wan_mac}' -F 'ca=#{@ca}' #{api_url}/api/v1/nas/gubbins -k | ash")
    if $? == 0
     `rm -rf /etc/status`
-   end
-    
     system 'rm -rf /tmp/gubbins.lock'
   end
 
@@ -142,7 +126,6 @@ class GoGoGubbins
       %x{curl --connect-timeout 5 --write-out "%{http_code}" --silent --output /dev/null "#{health_url}"}                                                
   end
 
-end
 
 if File.exists?('/tmp/gubbins.lock') && File.ctime('/tmp/gubbins.lock') > (Time.now - 60)
   puts "Already testing the connectivity"
