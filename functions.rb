@@ -142,7 +142,7 @@ def get_icmp_response(ip)
  if $? == 0
    return "success"
  else   
-  return "failure""
+  return "failure"
  end      
 end 
  

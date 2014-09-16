@@ -34,7 +34,8 @@ class GoGoGubbins
       end
     end
   end
-  
+end
+
   def externel_server
     return "8.8.8.8"
   end  
@@ -88,8 +89,7 @@ class GoGoGubbins
      if es_response != "success"
        if change == 2
          `kilall chilli && cp /etc/chilli/default /etc/chilli/online  && cp /etc/chilli/no_internet /etc/chilli/defaults && /etc/init.d/chilli restart`
-       end
-     end       
+       end       
      else 
        $live  = true 
        return $live
