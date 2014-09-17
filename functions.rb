@@ -14,7 +14,7 @@ end
 def wan_mac(device)
  f = `/sbin/ifconfig #{device}`
  if f.match(/(\S+)\:(\S+)\:(\S+)\:(\S+)\:(\S+)\:(\S+)/)
-  return "#$1:#$2:#$3:#$4:#$5:#$6"
+   "#$1:#$2:#$3:#$4:#$5:#$6"
  end
 end
 
@@ -31,7 +31,7 @@ end
 def lan_mac(device)
  f = `/sbin/ifconfig #{device}`
  if f.match(/(\S+)\:(\S+)\:(\S+)\:(\S+)\:(\S+)\:(\S+)/)
-  return "#$1:#$2:#$3:#$4:#$5:#$6"
+  "#$1:#$2:#$3:#$4:#$5:#$6"
  end
 end
 
