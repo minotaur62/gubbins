@@ -196,7 +196,7 @@ class Collectdata
     system 'touch /tmp/gubbins.lock'
     expected_response ? heartbeat : run_in_loop
   end
-  end
+ 
 
   def run_in_loop 
     i=0
@@ -242,9 +242,7 @@ class Collectdata
   end
 
   def log_to_syslog_and_status_file(interval)
-    if interval == 2
-      log_interface_change
-    end 
+    log_interface_change if interval == 2   
   end
 
   def no_wan_ip
@@ -263,15 +261,12 @@ class Collectdata
   end
 
   def gateway_is_down
-    @gateway = gateway
     gw_response = get_icmp_response(@gateway)
     gw_response != "success" 
   end
 
   def log_gateway_failure(interval)
-    if interval == 2
-      log_gateway_failure
-    end 
+    log_gateway_failure if interval == 2
   end
 
   def external_server_is_down
