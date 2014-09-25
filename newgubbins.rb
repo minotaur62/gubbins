@@ -40,15 +40,15 @@ class Device
     a[/link (\S+)/,1]
   end    
     	
-	def get_lan_name
+  def get_lan_name
      `/sbin/uci -P/var/state get network.lan.ifname`
   end
 
-	def lan_mac(device)
-	  f = `/sbin/ifconfig #{device}`
-	  if f.match(/(\S+)\:(\S+)\:(\S+)\:(\S+)\:(\S+)\:(\S+)/)
+  def lan_mac(device)
+     f = `/sbin/ifconfig #{device}`
+     if f.match(/(\S+)\:(\S+)\:(\S+)\:(\S+)\:(\S+)\:(\S+)/)
       "#$1:#$2:#$3:#$4:#$5:#$6"
-    end
+     end
   end
   
   def get_tun_ip(device)
