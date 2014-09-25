@@ -1,6 +1,5 @@
 #!/usr/bin/ruby
 
-
 require 'zlib'
 
 class Device
@@ -336,7 +335,8 @@ class Gubbins
       `rm -rf /etc/status`
     end   
     system 'rm -rf /tmp/gubbins.lock'
-  end 
+  end
+   
  end 
 
   def check_success_url                                                                                                                                
@@ -345,9 +345,9 @@ class Gubbins
 
 end 
 
-  if File.exists?('/tmp/gubbins.lock') && File.ctime('/tmp/gubbins.lock') > (Time.now - 60)
-    puts "Already testing the connectivity"
+if File.exists?('/tmp/gubbins.lock') && File.ctime('/tmp/gubbins.lock') > (Time.now - 60)
+  puts "Already testing the connectivity"
   else
     Gubbins.new.check_connectivity_and_heartbeat
-  end
+end
   
