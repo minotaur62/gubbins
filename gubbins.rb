@@ -3,179 +3,357 @@
 # Use this, change things but don't claim it's yours
 # Don't be a douche, play nice
 
-require '/etc/scripts/functions.rb'
 require 'zlib'
 
-class GoGoGubbins
+class Boxvalues
   
-  def initialize
-    @api_url = "https://api.polkaspots.com"
-    @health_url = "http://health.polkaspots.com/api/v1/health"
-    @external_server = "8.8.8.8"
-    @tun_ip = get_tun_ip('tun5')
-    @sync = get_sync
-    @nvs = get_nvs
-    @wvs = get_wvs
-    @uptime = uptime
-    @iwinfo = iwinfo
-    @iwdump = iwdump
-    @firmware = firmware
-    @scan = airodump
-    @ca = ca_checksum
-    @prefs= get_prefs
-    @logs=read_logfile
+  def get_wan_name
+    `/sbin/uci -P/var/state get network.wan.ifname | awk '{printf("%s",$all)}'`
   end
-  
-  def check_connectivity_and_heartbeat
-    system 'touch /tmp/gubbins.lock'
-    response = check_success_url
-    if ["200", "201", "404", "500"].include? response 
-      run_heartbeat
-    else
-      i=0
-      loop do
-        i+=1
-        check_status(i)
-        sleep 15
-        if $live == true
-          change_back
-          break
-        end
-      end
+
+  def get_wan_ip(device)
+    f = `/sbin/ifconfig #{device}`
+    f[/inet addr:(\S+)/,1]
+  end
+
+  def wan_mac(device)
+    f = `/sbin/ifconfig #{device}`
+    if f.match(/(\S+)\:(\S+)\:(\S+)\:(\S+)\:(\S+)\:(\S+)/)
+     "#$1:#$2:#$3:#$4:#$5:#$6"
     end
   end
 
-  def static_dynamic
-    @prefs= get_prefs
-    if @prefs != '"not exists"' 
-      string = File.open('/etc/prefs', 'rb') { |file| file.read }
-      if string.include?("static")
-        return "static"
+  def wan_status
+    @eth = $wan_name.split(' ').join('')
+    a = `dmesg | grep #{@eth} | tail -1`
+    a[/link (\S+)/,1]
+  end
+
+  def get_lan_name
+    `/sbin/uci -P/var/state get network.lan.ifname`
+  end
+
+    def lan_mac(device)
+     f = `/sbin/ifconfig #{device}`
+     if f.match(/(\S+)\:(\S+)\:(\S+)\:(\S+)\:(\S+)\:(\S+)/)
+      "#$1:#$2:#$3:#$4:#$5:#$6"
+     end
+    end
+
+    def get_tun_ip(device)
+     begin
+      f = `/sbin/ifconfig #{device}`
+      f = f[/inet addr:(\S+)/,1]
+      f.match(/(\S+)\.(\S+)\.(\S+)\.(\S+)/)
+      return f
+     rescue
+      f = 'no_vpn'
+     end
+    end
+
+    def get_machine_type
+     f = `cat /proc/cpuinfo`
+     f[/machine			: (.*)/, 1]
+    end
+
+    def get_system_type
+     f = `cat /proc/cpuinfo`
+     f = f[/system type		: (.*)/, 1]
+     f.split[0..1].join " "
+    end
+
+    def uptime                                             
+        f = `uptime`                                       
+        uptime = f.gsub(" ", "%20").gsub("\n","")          
+        seconds = `cat /proc/uptime`                       
+        seconds = seconds.split(' ').first.gsub("\n","")   
+        return "#{uptime}, #{seconds}"                     
+    end
+
+    def get_serial
+     f = `cat /etc/serial`
+     f.split("\n").first
+    end
+
+    def get_nvs
+     file="/etc/nvs"
+     if File.file?(file)  
+       f = `cat /etc/nvs`
+       f.split("\n").first
+      end 
+    end
+
+    def get_wvs
+     file="/etc/wvs"
+     if File.file?(file)   
+       f = `cat /etc/wvs`
+       f.split("\n").first
+     end   
+    end
+
+    def get_sync
+     f = `cat /etc/sync`
+     f.split("\n").first
+    end
+
+    def chilli_list
+      system `chilli_query list | awk '{printf ("%s,", $1 "%20" $2 "%20" $3 "%20" $4 "%20" $6 "%20" $8 "%20" $9)}' > /tmp/chilli_list`
+      hash = File.open("/tmp/chilli_list", "rb").read
+      return hash
+      hash.close
+    end
+
+    def firmware
+      f = `cat /etc/openwrt_version | awk '{printf("%s",$all)}'`
+    end
+
+    def get_active_wlan
+      w = `echo \`ls /sys/class/net | grep w\` | awk '{ print $all }'`
+    end   
+  
+    def gateway
+     `route | grep default | awk ' { print $2 } '`
+    end
+
+
+    def get_prefs
+     file="/etc/prefs"
+      if File.file?(file)
+        pref = `cat /etc/prefs`
+        pref.gsub("\n","") 
+      else 
+      return '"not exists"'
       end
-    else  
-      return "dynamic"    
+    end
+
+    def ca_checksum                                                                                                                   
+      file = "/etc/openvpn/ca.crt"                                                                                                    
+      if File.file?(file)                                                                                                             
+        cksum = `openssl md5 /etc/openvpn/ca.crt | sed "s/^.*= *//"`                                                                  
+        cksum.gsub("\n","")                                                                                                           
+      end                                                                                                                             
+    end
+
+    def read_logfile
+      file = "/etc/status"
+      if File.file?(file)
+        log =`cat /etc/status`
+        log.gsub("\n",",")
+      end
     end 
-  end 
+
+    def iwinfo
+      `sh /etc/scripts/iwinfo.sh #{get_active_wlan}`
+    end
+
+    def iwdump
+      `sh /etc/scripts/iwdump.sh #{get_active_wlan}`
+    end
+
+    def airodump
+     `sh /etc/scripts/airodump.sh`
+    end
+
+    def get_icmp_response(ip)
+     `ping  -c 1 #{ip}`
+     if $? == 0
+       return "success"
+     else   
+      return "failure"
+     end      
+    end 
  
+    def log_interface_change
+      `dmesg | awk -F ] '{"cat /proc/uptime | cut -d \" \" -f 1" | getline st;a=substr( $1,2,length($1) - 1);print strftime("%F %H:%M:%S %Z",systime()-st+a)" -> "$0}' | grep  eth1 | tail -1 | awk ' { print $all  }' >> /etc/status`
+    end  
+ 
+    def log_lost_ip
+      `echo \`date\` lost ip address  >> /etc/status`  
+    end 
+ 
+    def log_gateway_failure
+      `echo \`date\` Cannot ping to gateway >> /etc/status`
+    end
     
-  def change_back
-    puts "Make sure all the config is restored"
-  end 
-       
-  def check_status(change)
-    if wan_interface_status
-      log_to_syslog_and_status_file if change == 2
-    elsif wan_ip_status
-      log_to_syslog_and_rm_network_file if ((static_dynamic == "dynamic") && (change == 5))
-    elsif gateway_status
-      log_gateway_failure if change == 2
-    elsif external_server_status
-      kill_chilli_and_change_logins if change == 2
-    else
-      restore_config_and_go_live
-    end  
-  end 
-
-
-  def wan_interface_status
-    if @wan_status != "up"
-      return true
-    end
-    return false
-  end     
-
-  def log_to_syslog_and_status_file
-    log_interface_change
-  end 
-
-  def wan_ip_status
-    @wan_ip = get_wan_ip(get_wan_name)
-    wan_response = get_icmp_response(@wan_ip)
-    if wan_response != "success"
-      return true
-    else
-      return false
-    end 
-  end      
-
-  def log_to_syslog_and_rm_network_file
-    log_lost_ip
-    logger("network file changed")
-    `rm -rf /etc/network && /rom/etc/uci-defaults/02_network`
-  end
-
-  def gateway_status
-    @gateway = gateway
-    gw_response = get_icmp_response(@gateway)
-    if gw_response != "success"
-      return true
-    else
-      return false
-    end 
-  end 
-
-  def log_gateway_failure
-    log_gateway_failure
-  end
-
-  def external_server_status
-    externalserver_response = get_icmp_response(@external_server)
-    if externalserver_response != "success"
-      return true
-    else
-      return false
-    end
-  end 
-
-  def restore_config_and_go_live
-    logger("got internet back")
-    sync_configs
-    $live  = true 
-    return $live
-  end 
-
-  def sync_configs
-    puts "Get sync ??"
-  end 
-
-  def kill_chilli_and_change_logins
-    `kilall chilli && cp /etc/chilli/default /etc/chilli/online  && cp /etc/chilli/no_internet /etc/chilli/defaults && /etc/init.d/chilli restart`
-  end 
-
-  def logger(msg)
-    `logger #{msg}`
-  end
-
-  def log_to_syslog_and_rm_network_file
-    `logger network file changed`
-    `rm -rf /etc/network && /rom/etc/uci-defaults/02_network`
-  end
-
-  def run_heartbeat
-    data = "{\"data\":{\"serial\":\"#{$serial}\",\"ip\":\"#{@tun_ip}\",\"lmac\":\"#{$lan_mac}\",\"system\":\"#{$system_type}\",\"machine_type\":\"#{$machine_type}\",\"firmware\":\"#{@firmware}\",\"wan_interface\":\"#{$wan_name}\",\"wan_ip\":\"#{get_wan_ip($wan_name)}\",\"uptime\":\"#{uptime}\",\"sync\":\"#{@sync}\",\"version\":\"#{$version}\",\"chilli\":\"#{chilli_list}\",\"logs\":\"#{@logs}\",\"prefs\":#{@prefs}}, \"iwinfo\":#{@iwinfo},\"iwdump\":#{@iwdump}}"
-    Zlib::GzipWriter.open('/tmp/data.gz') do |gz|
-      gz.write data
-      gz.close
-      post_data
-    end
-  end
-
-  def post_data
-    system("curl --silent --connect-timeout 5 -F data=@/tmp/data.gz -F 'mac=#{$wan_mac}' -F 'ca=#{@ca}' #{@api_url}/api/v1/nas/gubbins -k | ash")
-    if $? == 0
-      `rm -rf /etc/status`
-    end  
-    system 'rm -rf /tmp/gubbins.lock'
-  end
-
-  def check_success_url                                                                                                                                
-    %x{curl --connect-timeout 5 --write-out "%{http_code}" --silent --output /dev/null "#{@health_url}"}                                                
-  end
-
 end 
 
-  if File.exists?('/tmp/gubbins.lock') && File.ctime('/tmp/gubbins.lock') > (Time.now - 60)
-    puts "Already testing the connectivity"
-  else
-    GoGoGubbins.new.check_connectivity_and_heartbeat
-  end
+ 
+  class GoGoGubbins
+
+    def initialize
+      @api_url = "https://api.polkaspots.com"
+      @health_url = "http://health.polkaspots.com/api/v1/health"
+      @external_server = "8.8.8.8"
+      $wan_name = Boxvalues.get_wan_name
+      $lan_name = Boxvalues.get_lan_name
+      $wan_mac = Boxvalues.wan_mac($wan_name)
+      $lan_mac = Boxvalues.lan_mac($lan_name)
+      $serial = Boxvalues.get_serial
+      $system_type = Boxvalues.get_system_type
+      $machine_type = Boxvalues.get_machine_type
+      $nvs = Boxvalues.get_nvs
+      $wvs = Boxvalues.get_wvs
+      $sync = Boxvalues.get_sync
+      $version = '1.3'
+    end
+
+    def get_variables
+      @tun_ip = get_tun_ip('tun5')
+      @sync = get_sync
+      @nvs = get_nvs
+      @wvs = get_wvs
+      @uptime = uptime
+      @iwinfo = iwinfo
+      @iwdump = iwdump
+      @firmware = firmware
+      @scan = airodump
+      @ca = ca_checksum
+      @prefs= get_prefs
+      @logs=read_logfile
+    end   
+
+    def expected_response
+       ["200", "201", "404", "500"].include? check_success_url
+    end  
+
+    def check_connectivity_and_heartbeat
+      system 'touch /tmp/gubbins.lock'
+      expected_response ? Heartbeat.run : go_in_to_the_loop
+      end
+    end
+
+    def go_in_to_the_loop
+        i=0
+        loop do
+          i+=1
+          find_why_box_not_online(i)
+          sleep 15
+          if $live == true
+            change_back
+            break
+          end
+        end
+
+    def is_static
+      @prefs= get_prefs
+      if @prefs != '"not exists"' 
+        string = File.open('/etc/prefs', 'rb') { |file| file.read }
+        string.include?("static")
+      end 
+    end 
+
+
+    def change_back
+      puts "Make sure all the config is restored"
+    end 
+
+    def find_why_box_not_online(interval)
+      if wan_interface_is_down
+        log_to_syslog_and_status_file(interval)
+        elsif no_wan_ip
+          log_to_syslog_and_rm_network_file(interval)
+          elsif gateway_is_down
+            log_gateway_failure(interval)
+            elsif external_server_is_down
+              kill_chilli_and_change_logins(interval)
+            else
+              restore_config_and_set_live
+      end
+    end 
+
+    def wan_interface_is_down
+      @wan_interface_status != "up"
+      end     
+
+    def log_to_syslog_and_status_file(interval)
+      if interval == 2
+        log_interface_change
+    end  
+
+    def no_wan_ip
+      @wan_ip = get_wan_ip(get_wan_name)
+      wan_response = get_icmp_response(@wan_ip)
+      wan_response != "success"
+    end      
+
+    def log_to_syslog_and_rm_network_file(interval)
+      if interval == 2 
+        log_lost_ip
+      elsif interval == 5 && is_static
+        logger("network file changed")
+        `rm -rf /etc/network && /rom/etc/uci-defaults/02_network`
+      end
+    end
+
+    def gateway_is_down
+      @gateway = gateway
+      gw_response = get_icmp_response(@gateway)
+      gw_response != "success" 
+    end 
+
+    def log_gateway_failure(interval)
+      if interval == 2
+      log_gateway_failure
+    end
+
+    def external_server_is_down
+      externalserver_response = get_icmp_response(@external_server)
+      externalserver_response != "success"
+    end 
+
+    def restore_config_and_set_live
+      logger("got internet back")
+      sync_configs
+      `rm -rf /tmp/gubbins.lock`
+      $live  = true 
+    end 
+
+    def sync_configs
+      puts "Get sync ??"
+      chilli = `cat /etc/chilli/defaults`
+      if chilli
+         `killall chilli && cp /etc/chilli/online /etc/chilli/default && /etc/init.d/chilli restart`
+    end 
+
+    def kill_chilli_and_change_logins(interval)
+      if interval == 2
+      `killall chilli && cp /etc/chilli/default /etc/chilli/online  && cp /etc/chilli/no_internet /etc/chilli/defaults && /etc/init.d/chilli restart`
+    end 
+
+    def logger(msg)
+      `logger #{msg}`
+    end
+
+    def log_to_syslog_and_rm_network_file
+      `logger network file changed`
+      `rm -rf /etc/network && /rom/etc/uci-defaults/02_network`
+    end
+    
+    def compress_data
+      data = "{\"data\":{\"serial\":\"#{$serial}\",\"ip\":\"#{@tun_ip}\",\"lmac\":\"#{$lan_mac}\",\"system\":\"#{$system_type}\",\"machine_type\":\"#{$machine_type}\",\"firmware\":\"#{@firmware}\",\"wan_interface\":\"#{$wan_name}\",\"wan_ip\":\"#{get_wan_ip($wan_name)}\",\"uptime\":\"#{uptime}\",\"sync\":\"#{@sync}\",\"version\":\"#{$version}\",\"chilli\":\"#{chilli_list}\",\"logs\":\"#{@logs}\",\"prefs\":#{@prefs}}, \"iwinfo\":#{@iwinfo},\"iwdump\":#{@iwdump}}"
+      Zlib::GzipWriter.open('/tmp/data.gz') do |gz|
+        gz.write data
+        gz.close
+      end
+
+    def post_data
+      `curl --silent --connect-timeout 5 -F data=@/tmp/data.gz -F 'mac=#{$wan_mac}' -F 'ca=#{@ca}' #{@api_url}/api/v1/nas/gubbins -k | ash`
+      if $? == 0
+        `curl --silent --connect-timeout 5 -F data=@/tmp/data.gz -F 'mac=#{$wan_mac}' -F 'ca=#{@ca}' #{@api_url}/api/v1/nas/gubbins -k | ash`
+        `rm -rf /etc/status`
+      end   
+      system 'rm -rf /tmp/gubbins.lock'
+    end 
+
+    def check_success_url                                                                                                                                
+      %x{curl --connect-timeout 5 --write-out "%{http_code}" --silent --output /dev/null "#{@health_url}"}                                                
+    end
+
+  end 
+
+    if File.exists?('/tmp/gubbins.lock') && File.ctime('/tmp/gubbins.lock') > (Time.now - 60)
+      puts "Already testing the connectivity"
+    else
+      GoGoGubbins.new.check_connectivity_and_heartbeat
+    end
+

@@ -2,6 +2,8 @@
 # Copyright (c) 2013 PolkaSpots Limited
 # Use this, change things but don't claim it's yours
 
+class Boxvalues
+  
 def get_wan_name
   return `/sbin/uci -P/var/state get network.wan.ifname | awk '{printf("%s",$all)}'`
 end
@@ -137,6 +139,22 @@ def read_logfile
   end
 end 
 
+
+
+def iwinfo
+  `sh /etc/scripts/iwinfo.sh #{get_active_wlan}`
+end
+
+def iwdump
+  `sh /etc/scripts/iwdump.sh #{get_active_wlan}`
+end
+
+def airodump
+ `sh /etc/scripts/airodump.sh`
+end
+
+end 
+
 def get_icmp_response(ip)
  `ping  -c 1 #{ip}`
  if $? == 0
@@ -157,18 +175,7 @@ end
 def log_gateway_failure
   `echo \`date\` Cannot ping to gateway >> /etc/status`
 end  
- 
-def iwinfo
-  `sh /etc/scripts/iwinfo.sh #{get_active_wlan}`
-end
 
-def iwdump
-  `sh /etc/scripts/iwdump.sh #{get_active_wlan}`
-end
-
-def airodump
- `sh /etc/scripts/airodump.sh`
-end
 
 $wan_name = get_wan_name
 $lan_name = get_lan_name
