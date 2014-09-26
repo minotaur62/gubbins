@@ -2,7 +2,7 @@
 
 require 'zlib'
 
-class Collectdata
+class CollectData
 
   def initialize
     $wan_name = get_wan_name
@@ -167,13 +167,9 @@ class Collectdata
     `sh /etc/scripts/airodump.sh`
   end
 
-  def get_icmp_response(ip)
+  def can_ping_ip(ip)
     `ping  -c 1 #{ip}`
-    if $? == 0
-      return "success"
-    else   
-      return "failure"
-    end      
+     return "success" if $? == 0      
   end
 
   def log_interface_change
@@ -197,7 +193,6 @@ class Collectdata
     expected_response ? heartbeat : run_in_loop
   end
  
-
   def run_in_loop 
     i=0
     loop do
@@ -247,7 +242,7 @@ class Collectdata
 
   def no_wan_ip
     @wan_ip = get_wan_ip(get_wan_name)
-    wan_response = get_icmp_response(@wan_ip)
+    wan_response = can_ping_ip(@wan_ip)
     wan_response != "success"
   end
 
@@ -261,7 +256,7 @@ class Collectdata
   end
 
   def gateway_is_down
-    gw_response = get_icmp_response(@gateway)
+    gw_response = can_ping_ip(@gateway)
     gw_response != "success" 
   end
 
@@ -270,7 +265,7 @@ class Collectdata
   end
 
   def external_server_is_down
-    externalserver_response = get_icmp_response(@external_server)
+    externalserver_response = can_ping_ip(@external_server)
     externalserver_response != "success"
   end
 
@@ -337,6 +332,6 @@ class Collectdata
   if File.exists?('/tmp/gubbins.lock') && File.ctime('/tmp/gubbins.lock') > (Time.now - 60)
     puts "Already testing the connectivity"
   else
-    Collectdata.new.run
+    CollectData.new.run
   end
 
