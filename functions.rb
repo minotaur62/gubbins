@@ -2,6 +2,8 @@
 # Copyright (c) 2013 PolkaSpots Limited
 # Use this, change things but don't claim it's yours
 
+class Boxvalues
+  
 def get_wan_name
   return `/sbin/uci -P/var/state get network.wan.ifname | awk '{printf("%s",$all)}'`
 end
@@ -14,7 +16,7 @@ end
 def wan_mac(device)
  f = `/sbin/ifconfig #{device}`
  if f.match(/(\S+)\:(\S+)\:(\S+)\:(\S+)\:(\S+)\:(\S+)/)
-  return "#$1:#$2:#$3:#$4:#$5:#$6"
+   "#$1:#$2:#$3:#$4:#$5:#$6"
  end
 end
 
@@ -31,7 +33,7 @@ end
 def lan_mac(device)
  f = `/sbin/ifconfig #{device}`
  if f.match(/(\S+)\:(\S+)\:(\S+)\:(\S+)\:(\S+)\:(\S+)/)
-  return "#$1:#$2:#$3:#$4:#$5:#$6"
+  "#$1:#$2:#$3:#$4:#$5:#$6"
  end
 end
 
@@ -57,9 +59,12 @@ def get_system_type
  return f.split[0..1].join " "
 end
 
-def uptime
- f = `uptime`
- return f.gsub(/\s/, "%20")
+def uptime                                             
+    f = `uptime`                                       
+    uptime = f.gsub(" ", "%20").gsub("\n","")          
+    seconds = `cat /proc/uptime`                       
+    seconds = seconds.split(' ').first.gsub("\n","")   
+    return "#{uptime}, #{seconds}"                     
 end
 
 def get_serial
@@ -68,13 +73,19 @@ def get_serial
 end
 
 def get_nvs
- f = `cat /etc/nvs`
- return f.split("\n").first
+ file="/etc/nvs"
+ if File.file?(file)  
+   f = `cat /etc/nvs`
+   return f.split("\n").first
+  end 
 end
 
 def get_wvs
- f = `cat /etc/wvs`
- return f.split("\n").first
+ file="/etc/wvs"
+ if File.file?(file)   
+   f = `cat /etc/wvs`
+   return f.split("\n").first
+ end   
 end
 
 def get_sync
@@ -101,6 +112,35 @@ def gateway
  `route | grep default | awk ' { print $2 } '`
 end
 
+
+def get_prefs
+ file="/etc/prefs"
+  if File.file?(file)
+    pref = `cat /etc/prefs`
+    pref.gsub("\n","") 
+  else 
+  return '"not exists"'
+  end
+end
+
+def ca_checksum                                                                                                                   
+  file = "/etc/openvpn/ca.crt"                                                                                                    
+  if File.file?(file)                                                                                                             
+    cksum = `openssl md5 /etc/openvpn/ca.crt | sed "s/^.*= *//"`                                                                  
+    cksum.gsub("\n","")                                                                                                           
+  end                                                                                                                             
+end
+
+def read_logfile
+  file = "/etc/status"
+  if File.file?(file)
+    log =`cat /etc/status`
+    log.gsub("\n",",")
+  end
+end 
+
+
+
 def iwinfo
   `sh /etc/scripts/iwinfo.sh #{get_active_wlan}`
 end
@@ -112,6 +152,30 @@ end
 def airodump
  `sh /etc/scripts/airodump.sh`
 end
+
+end 
+
+def get_icmp_response(ip)
+ `ping  -c 1 #{ip}`
+ if $? == 0
+   return "success"
+ else   
+  return "failure"
+ end      
+end 
+ 
+def log_interface_change
+  `dmesg | awk -F ] '{"cat /proc/uptime | cut -d \" \" -f 1" | getline st;a=substr( $1,2,length($1) - 1);print strftime("%F %H:%M:%S %Z",systime()-st+a)" -> "$0}' | grep  eth1 | tail -1 | awk ' { print $all  }' >> /etc/status`
+end  
+ 
+def log_lost_ip
+  `echo \`date\` lost ip address  >> /etc/status`  
+end 
+ 
+def log_gateway_failure
+  `echo \`date\` Cannot ping to gateway >> /etc/status`
+end  
+
 
 $wan_name = get_wan_name
 $lan_name = get_lan_name
