@@ -318,7 +318,7 @@ class CollectData
     `rm -rf /tmp/gubbins.lock`
   end
   
-  def collect_statstic_data
+  def collect_statistic_data
     @firmware = firmware
     @iwinfo = iwinfo
     @iwdump = iwdump
