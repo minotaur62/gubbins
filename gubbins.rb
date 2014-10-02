@@ -3,19 +3,21 @@
 require 'zlib'
 
 class CollectData
-
+  
+  attr_accessor :wan_name,:lan_name,:wan_mac,:lan_mac,:serial,:system_type,:machine_type,:machine_type,:nvs,:wvs,:sync,:version,:api_url,:health_url,:external_server
+  
   def initialize
-    $wan_name = get_wan_name
-    $lan_name = get_lan_name
-    $wan_mac = wan_mac($wan_name)
-    $lan_mac = lan_mac($lan_name)
-    $serial = get_serial
-    $system_type = get_system_type
-    $machine_type = get_machine_type
-    $nvs = get_nvs
-    $wvs = get_wvs
-    $sync = get_sync
-    $version = '1.3'
+    @wan_name = get_wan_name
+    @lan_name = get_lan_name
+    @wan_mac = wan_mac(@wan_name)
+    @lan_mac = lan_mac(@lan_name)
+    @serial = get_serial
+    @system_type = get_system_type
+    @machine_type = get_machine_type
+    @nvs = get_nvs
+    @wvs = get_wvs
+    @sync = get_sync
+    @version = '1.3'
     @api_url = "https://api.polkaspots.com"
     @health_url = "http://health.polkaspots.com/api/v1/health"
     @external_server = "8.8.8.8"
@@ -38,7 +40,7 @@ class CollectData
   end 
 
   def wan_status
-    @eth = $wan_name.split('').join('')
+    @eth = $wan_name.split('-').join('')
     a = `dmesg | grep #{@eth} | tail -1`
     a[/link (\S+)/,1]
   end    
@@ -287,7 +289,7 @@ class CollectData
   def kill_chilli_and_change_logins(interval)
     if interval == 2
       `killall chilli && cp /etc/chilli/default /etc/chilli/online  && cp /etc/chilli/no_internet /etc/chilli/defaults && /etc/init.d/chilli restart`
-    end
+    end 
   end 
 
   def logger(msg)
@@ -306,7 +308,7 @@ class CollectData
   def post_url_check
     check_success_url(@api_url)
   end 
-
+  
   def heartbeat
     if post_url_check == 200
       compress_data
@@ -321,17 +323,18 @@ class CollectData
       gz.write data
       gz.close
     end
-
-    def post_data
-      `curl --silent --connect-timeout 5 -F data=@/tmp/data.gz -F 'mac=#{$wan_mac}' -F 'ca=#{@ca}' #{@api_url}/api/v1/nas/gubbins -k | ash`
-      `rm -rf /etc/status`   
-      `rm -rf /tmp/gubbins.lock`
-    end
   end 
+
+  def post_data
+    `curl --silent --connect-timeout 5 -F data=@/tmp/data.gz -F 'mac=#{$wan_mac}' -F 'ca=#{@ca}' #{@api_url}/api/v1/nas/gubbins -k | ash`
+    `rm -rf /etc/status`   
+    `rm -rf /tmp/gubbins.lock`
+  end
+  
+end 
 
   if File.exists?('/tmp/gubbins.lock') && File.ctime('/tmp/gubbins.lock') > (Time.now - 60)
     puts "Already testing the connectivity"
   else
     CollectData.new.run
   end
-
