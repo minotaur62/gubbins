@@ -199,7 +199,7 @@ class CollectData
     i=0
     loop do
       i+=1
-      find_why_box_not_online(i)
+      offline_diagnosis(i)
       sleep 15
       if $live == true
         change_back
@@ -333,8 +333,8 @@ class CollectData
   
 end 
 
-  if File.exists?('/tmp/gubbins.lock') && File.ctime('/tmp/gubbins.lock') > (Time.now - 60)
-    puts "Already testing the connectivity"
-  else
-    CollectData.new.run
-  end
+ # if File.exists?('/tmp/gubbins.lock') && File.ctime('/tmp/gubbins.lock') > (Time.now - 60)
+ #   puts "Already testing the connectivity"
+ # else
+ #   CollectData.new.run
+ # end

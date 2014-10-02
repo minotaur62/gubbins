@@ -100,7 +100,35 @@ describe CollectData do
     expect(@data.wan_mac).to match(//)
   end 
   
+  it "has firmware version " do
+    allow(@data).to receive(:firmware) {"1.3"}
+    expect(@data).to respond_to(:firmware)
+    expect(@data.firmware).to match(/[0-9].[0-9]/)
+  end
+    
+  it "has active wlan interfaces #interfaces" do
+    allow(@data).to receive(:get_active_wlan) {"wlan0 wlan0-1"}
+    expect(@data).to respond_to(:get_active_wlan)
+    expect(@data.get_active_wlan).to match(//)
+  end
+      
+  it "can list the connected wireless clients" do
   
- 
+  end 
+         
+  it "can list the nearby wireless devices" do
+    
+  end   
+  
+  it "can ping to an ip address " do
+       
+  end 
+  
+  it "can log the interface changes to the /etc/status file" do
+    
+  end 
+  
+  it ""
+  
 end 
        
