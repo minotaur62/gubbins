@@ -40,7 +40,7 @@ class CollectData
   end 
 
   def wan_status
-    @eth = $wan_name.split('-').join('')
+    @eth = @wan_name.split('-').join('')
     a = `dmesg | grep #{@eth} | tail -1`
     a[/link (\S+)/,1]
   end    
