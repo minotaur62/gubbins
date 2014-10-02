@@ -311,11 +311,22 @@ class CollectData
   
   def heartbeat
     if post_url_check == 200
+      collect_statstic_data
       compress_data
       post_data
     end
     `rm -rf /tmp/gubbins.lock`
-  end 
+  end
+  
+  def collect_statstic_data
+    @firmware = firmware
+    @iwinfo = iwinfo
+    @iwdump = iwdump
+    @scan = airodump
+    @ca = ca_checksum
+    @prefs= get_prefs
+    @logs=read_logfile
+  end    
 
   def compress_data
     data = "{\"data\":{\"serial\":\"#{@serial}\",\"ip\":\"#{@tun_ip}\",\"lmac\":\"#{@lan_mac}\",\"system\":\"#{@system_type}\",\"machine_type\":\"#{@machine_type}\",\"firmware\":\"#{@firmware}\",\"wan_interface\":\"#{@wan_name}\",\"wan_ip\":\"#{get_wan_ip(@wan_name)}\",\"uptime\":\"#{uptime}\",\"sync\":\"#{@sync}\",\"version\":\"#{@version}\",\"chilli\":\"#{chilli_list}\",\"logs\":\"#{@logs}\",\"prefs\":#{@prefs}}, \"iwinfo\":#{@iwinfo},\"iwdump\":#{@iwdump}}"
@@ -326,15 +337,15 @@ class CollectData
   end 
 
   def post_data
-    `curl --silent --connect-timeout 5 -F data=@/tmp/data.gz -F 'mac=#{$wan_mac}' -F 'ca=#{@ca}' #{@api_url}/api/v1/nas/gubbins -k | ash`
+    `curl --silent --connect-timeout 5 -F data=@/tmp/data.gz -F 'mac=#{@wan_mac}' -F 'ca=#{@ca}' #{@api_url}/api/v1/nas/gubbins -k | ash`
     `rm -rf /etc/status`   
     `rm -rf /tmp/gubbins.lock`
   end
   
 end 
 
- # if File.exists?('/tmp/gubbins.lock') && File.ctime('/tmp/gubbins.lock') > (Time.now - 60)
- #   puts "Already testing the connectivity"
- # else
- #   CollectData.new.run
- # end
+  if File.exists?('/tmp/gubbins.lock') && File.ctime('/tmp/gubbins.lock') > (Time.now - 60)
+    puts "Already testing the connectivity"
+  else
+    CollectData.new.run
+  end

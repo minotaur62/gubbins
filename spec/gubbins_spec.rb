@@ -12,7 +12,7 @@ describe CollectData do
     expect(@data.wan_name).to eq 'eth0'
   end 
   
-  it "Should test we have a mocked the wan interface name" do
+  it "Should test we have a mocked the lan interface name" do
     expect(@data.lan_name).to eq 'br-lan'
   end 
   
@@ -87,17 +87,16 @@ describe CollectData do
     expect(@data.external_server).to match(/8.8.8.8/)
   end 
   
-  it "has a wan_ip" do
-    allow(@data).to receive(:get_wan_ip).and_return("10.0.1.1")
-    expect(@data).to receive(:get_wan_ip).with(any_args())
-    expect(@data.wan_ip).to match(/10.0.1.1/)
+  it "has wan_mac" do
+    @data=double
+    allow(@data).to receive(:wan_mac).and_return("00:34:34:44:32:3e")
+    expect(@data.wan_mac).to match(/00:34:34:44:32:3e/)
   end 
   
-  it "has wan_mac" do
-    wan_mac = double("wan_mac")
-    expect(wan_mac).to receive(:wan_mac) {eth0}
-    expect(wan_mac).to respond_to(:wan_mac)
-    expect(@data.wan_mac).to match(//)
+  it "has invalid mac address and raise an error" do
+    data=double
+    allow(data).to receive(:wan_mac).and_raise("invlaid mac")
+    data.wan_mac
   end 
   
   it "has firmware version " do
@@ -111,24 +110,45 @@ describe CollectData do
     expect(@data).to respond_to(:get_active_wlan)
     expect(@data.get_active_wlan).to match(//)
   end
+  
+  it "get the the api_url response code " do
+    expect(CollectData.new).to receive(:post_url_check).and_call_original
+    expect(CollectData.new.post_url_check("http://www.google.com")).to eq(200)
+  end 
       
-  it "can list the connected wireless clients" do
+  xit "can list the connected wireless clients" do
   
   end 
          
-  it "can list the nearby wireless devices" do
+  xit "can list the nearby wireless devices" do
     
   end   
   
-  it "can ping to an ip address " do
+  xit "can ping to an ip address " do
        
   end 
   
-  it "can log the interface changes to the /etc/status file" do
+  xit "can log the interface changes to the /etc/status file" do
     
   end 
   
-  it ""
+  xit "can zip collected data before post " do
+    
+  end 
+  
+  xit "lost the interface ip" do
+    
+  end 
+  
+  xit "lost the gateway" do
+    
+  end 
+  
+  xit "cannot ping to google dns " do
+    
+  end 
+  
+    
   
 end 
        
