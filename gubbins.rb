@@ -175,15 +175,15 @@ class CollectData
   end
 
   def log_interface_change
-    `dmesg | awk -F ] '{"cat /proc/uptime | cut -d \" \" -f 1" | getline st;a=substr( $1,2,length($1) - 1);print strftime("%F %H:%M:%S %Z",systime()-st+a)" -> "$0}' | grep  eth1 | tail -1 | awk ' { print $all  }' >> /etc/status`
+    `dmesg | awk -F ] '{"cat /proc/uptime | cut -d \" \" -f 1" | getline st;a=substr( $1,2,length($1) - 1);print strftime("%F %H:%M:%S %Z",systime()-st+a)" -> "$0}' | grep  eth1 | tail -1 | awk ' { print $all  }' > /etc/status`
   end  
 
   def log_lost_ip
-    `echo \`date\` lost ip address  >> /etc/status`  
+    `echo \`date\` lost ip address  > /etc/status`  
   end 
 
   def log_gateway_failure
-    `echo \`date\` Cannot ping to gateway >> /etc/status`
+    `echo \`date\` Cannot ping to gateway > /etc/status`
   end
 
   def expected_response
