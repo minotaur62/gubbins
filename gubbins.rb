@@ -302,7 +302,7 @@ class CollectData
   end
 
   def check_success_url(url)                                                                                                                                
-    %x{curl --connect-timeout 5 --write-out "%{http_code}" --silent --output /dev/null "#{@url}"}                                                
+    %x{curl --connect-timeout 5 --write-out "%{http_code}" --silent --output /dev/null "#{url}"}                                                
   end
 
   def post_url_check
