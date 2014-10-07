@@ -2,10 +2,11 @@
 
 require 'zlib'
 
-class CollectData
+class DataCollector
   
-  attr_accessor :wan_name,:lan_name,:wan_mac,:lan_mac,:serial,:system_type,:machine_type,:machine_type,:nvs,:wvs,:sync,:version,:api_url,:health_url,:external_server
-  
+  attr_accessor :wan_name,:lan_name,:wan_mac,:lan_mac,:serial,:system_type,:machine_type,
+              :machine_type,:nvs,:wvs,:sync,:version,:api_url,:health_url,:external_server
+              
   def initialize
     @wan_name = get_wan_name
     @lan_name = get_lan_name
@@ -19,8 +20,16 @@ class CollectData
     @sync = get_sync
     @version = '1.3'
     @api_url = "https://api.polkaspots.com"
-    @health_url = "http://health.polkaspots.com/api/v1/health"
+    @health_url = "http://www.bbc.co.uk"
     @external_server = "8.8.8.8"
+    @firmware = firmware
+    @iwinfo = iwinfo
+    @iwdump = iwdump
+    @scan = airodump
+    @ca = ca_checksum
+    @prefs= get_prefs
+    @logs= read_logfile
+    @tun_ip = get_tun_ip("tun5")
   end   
 
   def get_wan_name
@@ -171,7 +180,7 @@ class CollectData
 
   def can_ping_ip(ip)
     `ping  -c 1 #{ip}`
-     return "success" if $? == 0      
+    return "success" if $? == 0      
   end
 
   def log_interface_change
@@ -187,14 +196,14 @@ class CollectData
   end
 
   def expected_response
-    ["200", "201", "404", "500"].include? check_success_url(@api_url)
+    ["200", "201", "404", "500"].include? check_success_url(@health_url)
   end
 
   def run
     system 'touch /tmp/gubbins.lock'
-    expected_response ? heartbeat : run_in_loop
+    expected_response ? HeartBeat.new.beat : run_in_loop
   end
- 
+
   def run_in_loop 
     i=0
     loop do
@@ -202,7 +211,7 @@ class CollectData
       offline_diagnosis(i)
       sleep 15
       if $live == true
-        change_back
+        changerestore_config_back
         break
       end
     end
@@ -216,7 +225,7 @@ class CollectData
     end 
   end
 
-  def change_back
+  def restore_config
     puts "Make sure all the config is restored"
   end
 
@@ -306,27 +315,12 @@ class CollectData
   end
 
   def post_url_check
-    check_success_url(@api_url)
+    check_success_url(@health_url)
   end 
-  
-  def heartbeat
-    if post_url_check == 200
-      collect_statstic_data
-      compress_data
-      post_data
-    end
-    `rm -rf /tmp/gubbins.lock`
-  end
-  
-  def collect_statistic_data
-    @firmware = firmware
-    @iwinfo = iwinfo
-    @iwdump = iwdump
-    @scan = airodump
-    @ca = ca_checksum
-    @prefs= get_prefs
-    @logs=read_logfile
-  end    
+
+end 
+
+class HeartBeat < DataCollector
 
   def compress_data
     data = "{\"data\":{\"serial\":\"#{@serial}\",\"ip\":\"#{@tun_ip}\",\"lmac\":\"#{@lan_mac}\",\"system\":\"#{@system_type}\",\"machine_type\":\"#{@machine_type}\",\"firmware\":\"#{@firmware}\",\"wan_interface\":\"#{@wan_name}\",\"wan_ip\":\"#{get_wan_ip(@wan_name)}\",\"uptime\":\"#{uptime}\",\"sync\":\"#{@sync}\",\"version\":\"#{@version}\",\"chilli\":\"#{chilli_list}\",\"logs\":\"#{@logs}\",\"prefs\":#{@prefs}}, \"iwinfo\":#{@iwinfo},\"iwdump\":#{@iwdump}}"
@@ -334,18 +328,26 @@ class CollectData
       gz.write data
       gz.close
     end
-  end 
+  end
 
   def post_data
     `curl --silent --connect-timeout 5 -F data=@/tmp/data.gz -F 'mac=#{@wan_mac}' -F 'ca=#{@ca}' #{@api_url}/api/v1/nas/gubbins -k | ash`
     `rm -rf /etc/status`   
     `rm -rf /tmp/gubbins.lock`
   end
-  
-end 
 
+  def beat
+    if post_url_check == "200"
+      compress_data
+      post_data
+    end
+    `rm -rf /tmp/gubbins.lock`
+  end
+
+end
+ 
   if File.exists?('/tmp/gubbins.lock') && File.ctime('/tmp/gubbins.lock') > (Time.now - 60)
     puts "Already testing the connectivity"
   else
-    CollectData.new.run
+    DataCollector.new.run
   end

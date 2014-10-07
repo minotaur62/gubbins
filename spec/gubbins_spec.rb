@@ -1,6 +1,6 @@
 require 'spec_helper.rb'
 
-describe CollectData do
+describe DataCollector do
   
   before(:each) do
     @data = instance_double("CollectData")
