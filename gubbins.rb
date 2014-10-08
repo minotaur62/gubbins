@@ -6,7 +6,7 @@ class DataCollector
   
   attr_accessor :wan_name,:lan_name,:wan_mac,:lan_mac,:serial,:system_type,:machine_type,
               :machine_type,:nvs,:wvs,:sync,:version,:api_url,:health_url,:external_server
-              
+                     
   def initialize
     @wan_name = get_wan_name
     @lan_name = get_lan_name
@@ -21,11 +21,7 @@ class DataCollector
     @version = '1.3'
     @api_url = "https://api.polkaspots.com"
     @health_url = "http://www.bbc.co.uk"
-    @external_server = "8.8.8.8"
     @firmware = firmware
-    @iwinfo = iwinfo
-    @iwdump = iwdump
-    @scan = airodump
     @ca = ca_checksum
     @prefs= get_prefs
     @logs= read_logfile
@@ -47,12 +43,6 @@ class DataCollector
       "#$1:#$2:#$3:#$4:#$5:#$6"
     end 
   end 
-
-  def wan_status
-    @eth = @wan_name.split('-').join('')
-    a = `dmesg | grep #{@eth} | tail -1`
-    a[/link (\S+)/,1]
-  end    
 
   def get_lan_name
     return `/sbin/uci -P/var/state get network.lan.ifname`
@@ -131,15 +121,7 @@ class DataCollector
   def firmware
     f = `cat /etc/openwrt_version | awk '{printf("%s",$all)}'`
   end
-
-  def get_active_wlan
-    w = `echo \`ls /sys/class/net | grep w\` | awk '{ print $all }'`
-  end   
-
-  def gateway
-    `route | grep default | awk ' { print $2 } '`
-  end
-
+  
   def get_prefs
     file="/etc/prefs"
     if File.file?(file)
@@ -165,36 +147,7 @@ class DataCollector
       log.gsub("\n",",")
     end
   end 
-
-  def iwinfo
-    `sh /etc/scripts/iwinfo.sh #{get_active_wlan}`
-  end
-
-  def iwdump
-    `sh /etc/scripts/iwdump.sh #{get_active_wlan}`
-  end
-
-  def airodump
-    `sh /etc/scripts/airodump.sh`
-  end
-
-  def can_ping_ip(ip)
-    `ping  -c 1 #{ip}`
-    return "success" if $? == 0      
-  end
-
-  def log_interface_change
-    `dmesg | awk -F ] '{"cat /proc/uptime | cut -d \" \" -f 1" | getline st;a=substr( $1,2,length($1) - 1);print strftime("%F %H:%M:%S %Z",systime()-st+a)" -> "$0}' | grep  eth1 | tail -1 | awk ' { print $all  }' > /etc/status`
-  end  
-
-  def log_lost_ip
-    `echo \`date\` lost ip address  > /etc/status`  
-  end 
-
-  def log_gateway_failure
-    `echo \`date\` Cannot ping to gateway > /etc/status`
-  end
-
+  
   def expected_response
     ["200", "201", "404", "500"].include? check_success_url(@health_url)
   end
@@ -211,7 +164,8 @@ class DataCollector
       offline_diagnosis(i)
       sleep 15
       if $live == true
-        changerestore_config_back
+        restore_any_future_changes
+        HeartBeat.new.beat
         break
       end
     end
@@ -224,64 +178,28 @@ class DataCollector
       string.include?("static")
     end 
   end
-
-  def restore_config
+  
+  def offline_diagnosis(interval)
+      if wan_interface_is_down
+         Logger.new.log_interface_change if interval == 2  
+      elsif OfflineResponder.new.no_wan_ip
+        Logger.new.log_no_wan_ip if interval == 2
+        restore_network_file_from_rom if interval == 5
+      elsif OfflineResponder.new.gateway_is_down
+         Logger.new.log_gateway_failure if interval == 2
+      elsif OfflineResponder.new.external_server_is_down
+        change_chilli_logins if interval == 2
+      else
+        restore_config_and_set_live
+      end
+    end
+  
+  def restore_any_future_changes
     puts "Make sure all the config is restored"
   end
-
-  def offline_diagnosis(interval) 
-    if wan_interface_is_down
-      log_to_syslog_and_status_file(interval)
-    elsif no_wan_ip
-      log_to_syslog_and_rm_network_file(interval)
-    elsif gateway_is_down
-      log_gateway_failure(interval)
-    elsif external_server_is_down
-      kill_chilli_and_change_logins(interval)
-    else
-      restore_config_and_set_live
-    end
-  end
-
-  def wan_interface_is_down
-    @wan_interface_status != "up"
-  end
-
-  def log_to_syslog_and_status_file(interval)
-    log_interface_change if interval == 2   
-  end
-
-  def no_wan_ip
-    @wan_ip = get_wan_ip(get_wan_name)
-    wan_response = can_ping_ip(@wan_ip)
-    wan_response != "success"
-  end
-
-  def log_to_syslog_and_rm_network_file(interval)
-    if interval == 2 
-      log_lost_ip
-    elsif interval == 5 && is_static
-      logger("network file changed")
-      `rm -rf /etc/network && /rom/etc/uci-defaults/02_network`
-    end
-  end
-
-  def gateway_is_down
-    gw_response = can_ping_ip(@gateway)
-    gw_response != "success" 
-  end
-
-  def log_gateway_failure(interval)
-    log_gateway_failure if interval == 2
-  end
-
-  def external_server_is_down
-    externalserver_response = can_ping_ip(@external_server)
-    externalserver_response != "success"
-  end
-
+    
   def restore_config_and_set_live
-    logger("got internet back")
+    Logger.new.log("got internet back")
     sync_configs
     `rm -rf /tmp/gubbins.lock`
     $live  = true 
@@ -289,39 +207,122 @@ class DataCollector
 
   def sync_configs
     puts "Get sync ??"
-    chilli = `cat /etc/chilli/defaults`
+    chilli = `cat /etc/chilli/online`
     if chilli
       `killall chilli && cp /etc/chilli/online /etc/chilli/default && /etc/init.d/chilli restart`
     end 
   end
 
-  def kill_chilli_and_change_logins(interval)
-    if interval == 2
+  def change_chilli_logins
       `killall chilli && cp /etc/chilli/default /etc/chilli/online  && cp /etc/chilli/no_internet /etc/chilli/defaults && /etc/init.d/chilli restart`
-    end 
   end 
 
-  def logger(msg)
-    `logger #{msg}`
-  end
-
-  def log_to_syslog_and_rm_network_file
-    `logger network file changed`
+  def restore_network_file_from_rom
+    if is_static
     `rm -rf /etc/network && /rom/etc/uci-defaults/02_network`
-  end
+    end 
+  end 
 
   def check_success_url(url)                                                                                                                                
     %x{curl --connect-timeout 5 --write-out "%{http_code}" --silent --output /dev/null "#{url}"}                                                
   end
+  
+  module WirelessScanner
 
-  def post_url_check
-    check_success_url(@health_url)
-  end 
+    def scan_active_interfaces
+      @iwinfo = iwinfo
+      @iwdump = iwdump
+      @scan = airodump
+    end 
 
+    def get_active_wlan
+       w = `echo \`ls /sys/class/net | grep w\` | awk '{ print $all }'`
+     end
+
+     def iwinfo
+       `sh /etc/scripts/iwinfo.sh #{get_active_wlan}`
+     end
+
+     def iwdump
+       `sh /etc/scripts/iwdump.sh #{get_active_wlan}`
+     end
+
+     def airodump
+       `sh /etc/scripts/airodump.sh`
+     end 
+
+  end
+  
 end 
 
-class HeartBeat < DataCollector
+class Logger
+  
+  def log(msg)
+    `logger #{msg}`
+  end
+  
+  def log_interface_change
+    `dmesg | awk -F ] '{"cat /proc/uptime | cut -d \" \" -f 1" | getline st;a=substr( $1,2,length($1) - 1);print strftime("%F %H:%M:%S %Z",systime()-st+a)" -> "$0}' | grep  eth1 | tail -1 | awk ' { print $all  }' > /etc/status`
+    end
 
+  def log_no_wan_ip
+    `echo \`date\` lost ip address  > /etc/status`  
+  end 
+
+  def log_gateway_failure
+    `echo \`date\` Cannot ping to gateway > /etc/status`
+  end
+  
+end 
+
+class OfflineResponder
+  
+  def initialize
+    @external_server = "8.8.8.8"
+    @gateway = gateway
+  end 
+  
+  def wan_status
+    @eth = DataCollector.new.get_wan_name.split('-').join('')
+    a = `dmesg | grep #{@eth} | tail -1`
+    a[/link (\S+)/,1]
+  end
+  
+  def gateway
+    `route | grep default | awk ' { print $2 } '`
+  end
+   
+  def wan_interface_is_down
+    wan_status != "up"
+  end
+  
+  def can_ping_ip(ip)
+    `ping  -c 1 #{ip}`
+    return "success" if $? == 0      
+  end
+  
+  def no_wan_ip
+    @wan_ip = DataCollector.new.get_wan_ip(DataCollector.new.get_wan_name)
+    wan_response = can_ping_ip(@wan_ip)
+    wan_response != "success"
+  end
+  
+  def gateway_is_down
+    gw_response = can_ping_ip(@gateway)
+    gw_response != "success" 
+  end
+  
+  def external_server_is_down
+    externalserver_response = can_ping_ip(@external_server)
+    externalserver_response != "success"
+  end
+   
+end 
+    
+class HeartBeat < DataCollector 
+  
+  include WirelessScanner
+    
   def compress_data
     data = "{\"data\":{\"serial\":\"#{@serial}\",\"ip\":\"#{@tun_ip}\",\"lmac\":\"#{@lan_mac}\",\"system\":\"#{@system_type}\",\"machine_type\":\"#{@machine_type}\",\"firmware\":\"#{@firmware}\",\"wan_interface\":\"#{@wan_name}\",\"wan_ip\":\"#{get_wan_ip(@wan_name)}\",\"uptime\":\"#{uptime}\",\"sync\":\"#{@sync}\",\"version\":\"#{@version}\",\"chilli\":\"#{chilli_list}\",\"logs\":\"#{@logs}\",\"prefs\":#{@prefs}}, \"iwinfo\":#{@iwinfo},\"iwdump\":#{@iwdump}}"
     Zlib::GzipWriter.open('/tmp/data.gz') do |gz|
@@ -337,7 +338,8 @@ class HeartBeat < DataCollector
   end
 
   def beat
-    if post_url_check == "200"
+    if check_success_url(@health_url) == "200"
+      scan_active_interfaces
       compress_data
       post_data
     end
@@ -346,8 +348,8 @@ class HeartBeat < DataCollector
 
 end
  
-  if File.exists?('/tmp/gubbins.lock') && File.ctime('/tmp/gubbins.lock') > (Time.now - 60)
-    puts "Already testing the connectivity"
-  else
-    DataCollector.new.run
-  end
+ if File.exists?('/tmp/gubbins.lock') && File.ctime('/tmp/gubbins.lock') > (Time.now - 60)
+   puts "Already testing the connectivity"
+ else
+   DataCollector.new.run
+ end
