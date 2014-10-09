@@ -3,9 +3,6 @@
 require 'zlib'
 
 class DataCollector
-  
-  attr_accessor :wan_name,:lan_name,:wan_mac,:lan_mac,:serial,:system_type,:machine_type,
-              :machine_type,:nvs,:wvs,:sync,:version,:api_url,:health_url,:external_server
                      
   def initialize
     @wan_name = get_wan_name
@@ -348,8 +345,8 @@ class HeartBeat < DataCollector
 
 end
  
- if File.exists?('/tmp/gubbins.lock') && File.ctime('/tmp/gubbins.lock') > (Time.now - 60)
-   puts "Already testing the connectivity"
- else
-   DataCollector.new.run
- end
+  if File.exists?('/tmp/gubbins.lock') && File.ctime('/tmp/gubbins.lock') > (Time.now - 60)
+    puts "Already testing the connectivity"
+  else   
+    DataCollector.new.run
+  end
