@@ -112,8 +112,9 @@ describe DataCollector do
   end
   
   it "get the the api_url response code " do
-    expect(DataCollector.new).to receive(:post_url_check).and_call_original
-    expect(DataCollector.new.post_url_check("http://www.google.com")).to eq(200)
+    health_url = "http://www.google.com"
+    expect(DataCollector.new).to receive(:check_success_url).with(health_url).and_call_original
+    expect(DataCollector.new.check_success_url(health_url)).to eq(200)
   end 
       
   xit "can list the connected wireless clients" do

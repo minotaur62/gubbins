@@ -177,7 +177,7 @@ class DataCollector
   end
   
   def offline_diagnosis(interval)
-      if wan_interface_is_down
+      if OfflineResponder.new.wan_interface_is_down
          Logger.new.log_interface_change if interval == 2  
       elsif OfflineResponder.new.no_wan_ip
         Logger.new.log_no_wan_ip if interval == 2
@@ -206,15 +206,12 @@ class DataCollector
     puts "Get sync ??"
     chilli = `cat /etc/chilli/online`
     if chilli
-      `killall chilli && cp /etc/chilli/online /etc/chilli/default 
-      && /etc/init.d/chilli restart`
+      `killall chilli && cp /etc/chilli/online /etc/chilli/default && /etc/init.d/chilli restart`
     end 
   end
 
   def change_chilli_logins
-      `killall chilli && cp /etc/chilli/default /etc/chilli/online  
-      && cp /etc/chilli/no_internet /etc/chilli/defaults 
-      && /etc/init.d/chilli restart`
+      `killall chilli && cp /etc/chilli/default /etc/chilli/online && cp /etc/chilli/no_internet /etc/chilli/defaults && /etc/init.d/chilli restart`
   end 
 
   def restore_network_file_from_rom
@@ -338,8 +335,7 @@ class HeartBeat < DataCollector
   end
 
   def post_data
-    `curl --silent --connect-timeout 5 -F data=@/tmp/data.gz -F 'mac=#{@wan_mac}' 
-     -F 'ca=#{@ca}' #{@api_url}/api/v1/nas/gubbins -k | ash`
+    `curl --silent --connect-timeout 5 -F data=@/tmp/data.gz -F 'mac=#{@wan_mac}'-F 'ca=#{@ca}' #{@api_url}/api/v1/nas/gubbins -k | ash`
     `rm -rf /etc/status`   
     `rm -rf /tmp/gubbins.lock`
   end
