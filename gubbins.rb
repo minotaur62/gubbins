@@ -177,19 +177,19 @@ class DataCollector
   end
   
   def offline_diagnosis(interval)
-      if OfflineResponder.new.wan_interface_is_down
-         Logger.new.log_interface_change if interval == 2  
+    if OfflineResponder.new.wan_interface_is_down
+      Logger.new.log_interface_change if interval == 2
       elsif OfflineResponder.new.no_wan_ip
         Logger.new.log_no_wan_ip if interval == 2
         restore_network_file_from_rom if interval == 5
-      elsif OfflineResponder.new.gateway_is_down
-         Logger.new.log_gateway_failure if interval == 2
-      elsif OfflineResponder.new.external_server_is_down
-        change_chilli_logins if interval == 2
-      else
-        restore_config_and_set_live
-      end
+        elsif OfflineResponder.new.gateway_is_down
+          Logger.new.log_gateway_failure if interval == 2
+          elsif OfflineResponder.new.external_server_is_down
+            change_chilli_logins if interval == 2
+            else
+              restore_config_and_set_live
     end
+  end
   
   def restore_any_future_changes
     puts "Make sure all the config is restored"
@@ -259,15 +259,13 @@ class Logger
   end
   
   def log_interface_change
-    `dmesg | awk -F ] '{"cat /proc/uptime | cut -d \" \" -f 1" | getline st;a=substr( $1,2,length($1) - 1);
-    print strftime("%F %H:%M:%S %Z",systime()-st+a)" -> "$0}' | grep  eth1 | tail -1 | 
-    awk ' { print $all  }' > /etc/status`
+    `dmesg | awk -F ] '{"cat /proc/uptime | cut -d \" \" -f 1" | getline st;a=substr( $1,2,length($1) - 1);print strftime("%F %H:%M:%S %Z",systime()-st+a)" -> "$0}' | grep  eth1 | tail -1 | awk ' { print $all  }' > /etc/status`
   end
-
+  
   def log_no_wan_ip
-    `echo \`date\` lost ip address  > /etc/status`  
-  end 
-
+    `echo \`date\` lost ip address  > /etc/status`
+  end
+  
   def log_gateway_failure
     `echo \`date\` Cannot ping to gateway > /etc/status`
   end
