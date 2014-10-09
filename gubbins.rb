@@ -75,11 +75,11 @@ class DataCollector
   end
 
   def uptime
-    f = `uptime`                                       
-    uptime = f.gsub(" ", "%20").gsub("\n","")          
-    seconds = `cat /proc/uptime`                       
-    seconds = seconds.split(' ').first.gsub("\n","")   
-    return "#{uptime}, #{seconds}"                     
+    f = `uptime`
+    uptime = f.gsub(" ", "%20").gsub("\n","")
+    seconds = `cat /proc/uptime`
+    seconds = seconds.split(' ').first.gsub("\n","")
+    return "#{uptime}, #{seconds}"
   end
 
   def get_serial
@@ -129,12 +129,12 @@ class DataCollector
     end
   end
 
-  def ca_checksum                                                                                                                   
-    file = "/etc/openvpn/ca.crt"                                                                                                    
-    if File.file?(file)                                                                                                             
-      cksum = `openssl md5 /etc/openvpn/ca.crt | sed "s/^.*= *//"`                                                                  
-      cksum.gsub("\n","")                                                                                                           
-    end                                                                                                                             
+  def ca_checksum
+    file = "/etc/openvpn/ca.crt"
+    if File.file?(file)
+      cksum = `openssl md5 /etc/openvpn/ca.crt | sed "s/^.*= *//"`
+      cksum.gsub("\n","")
+    end
   end
 
   def read_logfile
@@ -206,12 +206,15 @@ class DataCollector
     puts "Get sync ??"
     chilli = `cat /etc/chilli/online`
     if chilli
-      `killall chilli && cp /etc/chilli/online /etc/chilli/default && /etc/init.d/chilli restart`
+      `killall chilli && cp /etc/chilli/online /etc/chilli/default 
+      && /etc/init.d/chilli restart`
     end 
   end
 
   def change_chilli_logins
-      `killall chilli && cp /etc/chilli/default /etc/chilli/online  && cp /etc/chilli/no_internet /etc/chilli/defaults && /etc/init.d/chilli restart`
+      `killall chilli && cp /etc/chilli/default /etc/chilli/online  
+      && cp /etc/chilli/no_internet /etc/chilli/defaults 
+      && /etc/init.d/chilli restart`
   end 
 
   def restore_network_file_from_rom
@@ -259,8 +262,10 @@ class Logger
   end
   
   def log_interface_change
-    `dmesg | awk -F ] '{"cat /proc/uptime | cut -d \" \" -f 1" | getline st;a=substr( $1,2,length($1) - 1);print strftime("%F %H:%M:%S %Z",systime()-st+a)" -> "$0}' | grep  eth1 | tail -1 | awk ' { print $all  }' > /etc/status`
-    end
+    `dmesg | awk -F ] '{"cat /proc/uptime | cut -d \" \" -f 1" | getline st;a=substr( $1,2,length($1) - 1);
+    print strftime("%F %H:%M:%S %Z",systime()-st+a)" -> "$0}' | grep  eth1 | tail -1 | 
+    awk ' { print $all  }' > /etc/status`
+  end
 
   def log_no_wan_ip
     `echo \`date\` lost ip address  > /etc/status`  
@@ -321,7 +326,11 @@ class HeartBeat < DataCollector
   include WirelessScanner
     
   def compress_data
-    data = "{\"data\":{\"serial\":\"#{@serial}\",\"ip\":\"#{@tun_ip}\",\"lmac\":\"#{@lan_mac}\",\"system\":\"#{@system_type}\",\"machine_type\":\"#{@machine_type}\",\"firmware\":\"#{@firmware}\",\"wan_interface\":\"#{@wan_name}\",\"wan_ip\":\"#{get_wan_ip(@wan_name)}\",\"uptime\":\"#{uptime}\",\"sync\":\"#{@sync}\",\"version\":\"#{@version}\",\"chilli\":\"#{chilli_list}\",\"logs\":\"#{@logs}\",\"prefs\":#{@prefs}}, \"iwinfo\":#{@iwinfo},\"iwdump\":#{@iwdump}}"
+    data = "{\"data\":{\"serial\":\"#{@serial}\",\"ip\":\"#{@tun_ip}\",\"lmac\":\"#{@lan_mac}\",
+    \"system\":\"#{@system_type}\",\"machine_type\":\"#{@machine_type}\",\"firmware\":\"#{@firmware}\",
+    \"wan_interface\":\"#{@wan_name}\",\"wan_ip\":\"#{get_wan_ip(@wan_name)}\",\"uptime\":\"#{uptime}\",
+    \"sync\":\"#{@sync}\",\"version\":\"#{@version}\",\"chilli\":\"#{chilli_list}\",\"logs\":\"#{@logs}\",
+    \"prefs\":#{@prefs}}, \"iwinfo\":#{@iwinfo},\"iwdump\":#{@iwdump}}"
     Zlib::GzipWriter.open('/tmp/data.gz') do |gz|
       gz.write data
       gz.close
@@ -329,7 +338,8 @@ class HeartBeat < DataCollector
   end
 
   def post_data
-    `curl --silent --connect-timeout 5 -F data=@/tmp/data.gz -F 'mac=#{@wan_mac}' -F 'ca=#{@ca}' #{@api_url}/api/v1/nas/gubbins -k | ash`
+    `curl --silent --connect-timeout 5 -F data=@/tmp/data.gz -F 'mac=#{@wan_mac}' 
+     -F 'ca=#{@ca}' #{@api_url}/api/v1/nas/gubbins -k | ash`
     `rm -rf /etc/status`   
     `rm -rf /tmp/gubbins.lock`
   end
