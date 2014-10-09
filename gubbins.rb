@@ -17,7 +17,7 @@ class DataCollector
     @sync = get_sync
     @version = '1.3'
     @api_url = "https://api.polkaspots.com"
-    @health_url = "http://www.bbc.co.uk"
+    @health_url = "http://health.polkaspots.com/api/v1/health"
     @firmware = firmware
     @ca = ca_checksum
     @prefs= get_prefs
@@ -179,15 +179,15 @@ class DataCollector
   def offline_diagnosis(interval)
     if OfflineResponder.new.wan_interface_is_down
       Logger.new.log_interface_change if interval == 2
-      elsif OfflineResponder.new.no_wan_ip
-        Logger.new.log_no_wan_ip if interval == 2
-        restore_network_file_from_rom if interval == 5
-        elsif OfflineResponder.new.gateway_is_down
-          Logger.new.log_gateway_failure if interval == 2
-          elsif OfflineResponder.new.external_server_is_down
-            change_chilli_logins if interval == 2
-            else
-              restore_config_and_set_live
+    elsif OfflineResponder.new.no_wan_ip
+      Logger.new.log_no_wan_ip if interval == 2
+      restore_network_file_from_rom if interval == 5
+    elsif OfflineResponder.new.gateway_is_down
+      Logger.new.log_gateway_failure if interval == 2
+    elsif OfflineResponder.new.external_server_is_down
+      change_chilli_logins if interval == 2
+    else
+      restore_config_and_set_live
     end
   end
   
@@ -204,19 +204,19 @@ class DataCollector
 
   def sync_configs
     puts "Get sync ??"
-    chilli = `cat /etc/chilli/online`
-    if chilli
+    file = `/etc/chilli/online`
+    if File.file?(file)
       `killall chilli && cp /etc/chilli/online /etc/chilli/default && /etc/init.d/chilli restart`
     end 
   end
 
   def change_chilli_logins
-      `killall chilli && cp /etc/chilli/default /etc/chilli/online && cp /etc/chilli/no_internet /etc/chilli/defaults && /etc/init.d/chilli restart`
+    `killall chilli && cp /etc/chilli/default /etc/chilli/online && cp /etc/chilli/no_internet /etc/chilli/defaults && /etc/init.d/chilli restart`
   end 
 
   def restore_network_file_from_rom
     if is_static
-    `rm -rf /etc/network && /rom/etc/uci-defaults/02_network`
+      `rm -rf /etc/network && /rom/etc/uci-defaults/02_network`
     end 
   end 
 

@@ -93,6 +93,7 @@ describe DataCollector do
     expect(@data.wan_mac).to match(/00:34:34:44:32:3e/)
   end 
   
+  
   xit "has invalid mac address and raise an error" do
     data=double
     allow(data).to receive(:wan_mac).and_raise("invlaid mac")
@@ -114,7 +115,7 @@ describe DataCollector do
   it "get the the api_url response code " do
     health_url = "http://www.google.com"
     expect(DataCollector.new).to receive(:check_success_url).with(health_url).and_call_original
-    expect(DataCollector.new.check_success_url(health_url)).to eq(200)
+    expect(DataCollector.new.check_success_url(health_url)).to eq(302)
   end 
       
   xit "can list the connected wireless clients" do
@@ -125,8 +126,10 @@ describe DataCollector do
     
   end   
   
-  xit "can ping to an ip address " do
-       
+  it "can ping to an ip address " do
+    ip = "8.8.8.8"
+    expect(OfflineResponder.new).to receive(:can_ping_ip).with(ip).and_call_original
+    expect(OfflineResponder.new.can_ping_ip(ip)).to eq("success")
   end 
   
   xit "can log the interface changes to the /etc/status file" do
