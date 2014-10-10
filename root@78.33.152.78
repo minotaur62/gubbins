@@ -234,19 +234,19 @@ class DataCollector
 
     def get_active_wlan
        w = `echo \`ls /sys/class/net | grep w\` | awk '{ print $all }'`
-    end
+     end
 
-    def iwinfo
+     def iwinfo
        `sh /etc/scripts/iwinfo.sh #{get_active_wlan}`
-    end
+     end
 
-    def iwdump
-      `sh /etc/scripts/iwdump.sh #{get_active_wlan}`
-    end
+     def iwdump
+       `sh /etc/scripts/iwdump.sh #{get_active_wlan}`
+     end
 
-    def airodump
-      `sh /etc/scripts/airodump.sh`
-    end 
+     def airodump
+       `sh /etc/scripts/airodump.sh`
+     end 
 
   end
   

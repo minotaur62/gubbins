@@ -1,4 +1,4 @@
-#!/usr/bin/ruby
+can#!/usr/bin/ruby
 
 require 'zlib'
 
@@ -15,7 +15,7 @@ class DataCollector
     @nvs = get_nvs
     @wvs = get_wvs
     @sync = get_sync
-    @version = '1.3.2'
+    @version = '1.3'
     @api_url = "https://api.polkaspots.com"
     @health_url = "http://health.polkaspots.com/api/v1/health"
     @firmware = firmware
@@ -234,19 +234,19 @@ class DataCollector
 
     def get_active_wlan
        w = `echo \`ls /sys/class/net | grep w\` | awk '{ print $all }'`
-    end
+     end
 
-    def iwinfo
+     def iwinfo
        `sh /etc/scripts/iwinfo.sh #{get_active_wlan}`
-    end
+     end
 
-    def iwdump
-      `sh /etc/scripts/iwdump.sh #{get_active_wlan}`
-    end
+     def iwdump
+       `sh /etc/scripts/iwdump.sh #{get_active_wlan}`
+     end
 
-    def airodump
-      `sh /etc/scripts/airodump.sh`
-    end 
+     def airodump
+       `sh /etc/scripts/airodump.sh`
+     end 
 
   end
   
@@ -329,7 +329,7 @@ class HeartBeat < DataCollector
   end
 
   def post_data
-    `curl --silent --connect-timeout 5 -F data=@/tmp/data.gz -F 'mac=#{@wan_mac}' -F 'ca=#{@ca}' #{@api_url}/api/v1/nas/gubbins -k | ash`
+    `curl --silent --connect-timeout 5 -F data=@/tmp/data.gz -F 'mac=#{@wan_mac}'-F 'ca=#{@ca}' #{@api_url}/api/v1/nas/gubbins -k | ash`
     `rm -rf /etc/status`   
     `rm -rf /tmp/gubbins.lock`
   end
