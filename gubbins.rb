@@ -23,6 +23,7 @@ class DataCollector
     @prefs= get_prefs
     @logs= read_logfile
     @tun_ip = get_tun_ip("tun5")
+    @dhcp_leases = read_dhcp_leases
   end   
 
   def get_wan_name
@@ -114,6 +115,15 @@ class DataCollector
     return hash
     hash.close
   end
+  
+  def read_dhcp_leases
+    file = "/tmp/dhcp/leases"
+    if(!(File.file?(file)) || (File.zero?(file)))
+      return "no devices connected"
+    end 
+    dhcp_leases = `cat /tmp/dhcp.leases`
+    dhcp_leases.gsub("\n",",")
+  end 
 
   def firmware
     f = `cat /etc/openwrt_version | awk '{printf("%s",$all)}'`
@@ -321,7 +331,7 @@ class HeartBeat < DataCollector
   include WirelessScanner
     
   def compress_data
-    data = "{\"data\":{\"serial\":\"#{@serial}\",\"ip\":\"#{@tun_ip}\",\"lmac\":\"#{@lan_mac}\",\"system\":\"#{@system_type}\",\"machine_type\":\"#{@machine_type}\",\"firmware\":\"#{@firmware}\",\"wan_interface\":\"#{@wan_name}\",\"wan_ip\":\"#{get_wan_ip(@wan_name)}\",\"uptime\":\"#{uptime}\",\"sync\":\"#{@sync}\",\"version\":\"#{@version}\",\"chilli\":\"#{chilli_list}\",\"logs\":\"#{@logs}\",\"prefs\":#{@prefs}}, \"iwinfo\":#{@iwinfo},\"iwdump\":#{@iwdump}}"
+    data = "{\"data\":{\"serial\":\"#{@serial}\",\"ip\":\"#{@tun_ip}\",\"lmac\":\"#{@lan_mac}\",\"system\":\"#{@system_type}\",\"machine_type\":\"#{@machine_type}\",\"firmware\":\"#{@firmware}\",\"wan_interface\":\"#{@wan_name}\",\"wan_ip\":\"#{get_wan_ip(@wan_name)}\",\"uptime\":\"#{uptime}\",\"sync\":\"#{@sync}\",\"version\":\"#{@version}\",\"chilli\":\"#{chilli_list}\",\"dhcp_leases\":\"#{@dhcp_leases}\","\"logs\":\"#{@logs}\",\"prefs\":#{@prefs}}, \"iwinfo\":#{@iwinfo},\"iwdump\":#{@iwdump}}"
     Zlib::GzipWriter.open('/tmp/data.gz') do |gz|
       gz.write data
       gz.close
