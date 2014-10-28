@@ -240,6 +240,7 @@ class DataCollector
       @iwinfo = iwinfo
       @iwdump = iwdump
       @scan = airodump
+      @wifi_clients = wifi_clients
     end 
 
     def get_active_wlan
@@ -256,7 +257,11 @@ class DataCollector
 
     def airodump
       `sh /etc/scripts/airodump.sh`
-    end 
+    end
+    
+    def wifi_clients
+      `sh /etc/scripts/wificlients.sh`
+    end  
 
   end
   
@@ -331,7 +336,7 @@ class HeartBeat < DataCollector
   include WirelessScanner
     
   def compress_data
-    data = "{\"data\":{\"serial\":\"#{@serial}\",\"ip\":\"#{@tun_ip}\",\"lmac\":\"#{@lan_mac}\",\"system\":\"#{@system_type}\",\"machine_type\":\"#{@machine_type}\",\"firmware\":\"#{@firmware}\",\"wan_interface\":\"#{@wan_name}\",\"wan_ip\":\"#{get_wan_ip(@wan_name)}\",\"uptime\":\"#{uptime}\",\"sync\":\"#{@sync}\",\"version\":\"#{@version}\",\"chilli\":\"#{chilli_list}\",\"dhcp_leases\":\"#{@dhcp_leases}\","\"logs\":\"#{@logs}\",\"prefs\":#{@prefs}}, \"iwinfo\":#{@iwinfo},\"iwdump\":#{@iwdump}}"
+    data = "{\"data\":{\"serial\":\"#{@serial}\",\"ip\":\"#{@tun_ip}\",\"lmac\":\"#{@lan_mac}\",\"system\":\"#{@system_type}\",\"machine_type\":\"#{@machine_type}\",\"firmware\":\"#{@firmware}\",\"wan_interface\":\"#{@wan_name}\",\"wan_ip\":\"#{get_wan_ip(@wan_name)}\",\"uptime\":\"#{uptime}\",\"sync\":\"#{@sync}\",\"version\":\"#{@version}\",\"chilli\":\"#{chilli_list}\",\"dhcp_leases\":\"#{@dhcp_leases}\","\"logs\":\"#{@logs}\",\"prefs\":#{@prefs}},\"wifi_clients\":#{@wifi_clients}",\"iwinfo\":#{@iwinfo},\"iwdump\":#{@iwdump}}"
     Zlib::GzipWriter.open('/tmp/data.gz') do |gz|
       gz.write data
       gz.close
