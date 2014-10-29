@@ -1,4 +1,7 @@
 #!/bin/sh
+# This script will give you a nice json output of connected wireless clients list
+# Script name : wificlients.sh
+# /etc/scripts/wificlients.sh
 source /usr/share/libubox/jshn.sh
 json_init
 for interface in `iw dev | grep Interface | cut -f 2 -s -d" "`
