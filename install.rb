@@ -12,6 +12,8 @@ class Installer
       "scripts/iwinfo.sh" => '/etc/scripts/iwinfo.sh',
       "scripts/iwdump.sh" => '/etc/scripts/iwdump.sh',
       "scripts/airodump.sh" => '/etc/scripts/airodump.sh',
+      "scripts/iwscan.sh" => '/etc/scripts/iwscan.sh',
+      "scripts/wificlients.sh" => '/etc/scripts/wificlients.sh',
       "init.d/polkaspots" => '/etc/init.d/polkaspots'
     }
   end
