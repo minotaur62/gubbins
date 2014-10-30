@@ -27,7 +27,11 @@ class DataCollector
   end   
 
   def get_wan_name
-    `/sbin/uci -P/var/state get network.wan.ifname | awk '{printf("%s",$all)}'`
+    f = `/sbin/uci -P/var/state get network.wan.ifname`
+    if ($? !=0) || (f.include?("not"))
+      `jffs2reset -y || firstboot && /sbin/reboot`
+    end 
+    return f
   end
 
   def get_wan_ip(device)
@@ -216,17 +220,20 @@ class DataCollector
     puts "Get sync ??"
     file = `/etc/chilli/online`
     if File.file?(file)
-      `killall chilli && cp /etc/chilli/online /etc/chilli/default && /etc/init.d/chilli restart`
+      `cp /etc/chilli/online /etc/chilli/default && /etc/init.d/chilli restart`
     end 
   end
 
   def change_chilli_logins
-    `killall chilli && cp /etc/chilli/default /etc/chilli/online && cp /etc/chilli/no_internet /etc/chilli/defaults && /etc/init.d/chilli restart`
+    `cp /etc/chilli/default /etc/chilli/online && sed -e 's/HS_UAMFORMAT.*/HS_UAMFORMAT=http:\/\/\\$HS_UAMLISTEN\/offline.html/g' /etc/chilli/default && /etc/init.d/chilli restart`
   end 
 
   def restore_network_file_from_rom
     if is_static
       `rm -rf /etc/network && /rom/etc/uci-defaults/02_network`
+      `cp /rom/etc/config/dhcp /etc/config/dhcp`
+      `rm -rf /etc/config/wireless && /sbin/wifi detect > /etc/config/wireless`
+      `/etc/init.d/network restart` 
     end 
   end 
 
