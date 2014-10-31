@@ -31,7 +31,7 @@ class DataCollector
     if ($? !=0) || (f.include?("not"))
       `jffs2reset -y || firstboot && /sbin/reboot`
     end 
-    f.split("\n").first
+    return f
   end
 
   def get_wan_ip(device)
@@ -343,7 +343,7 @@ class HeartBeat < DataCollector
   include WirelessScanner
     
   def compress_data
-    data = "{\"data\":{\"serial\":\"#{@serial}\",\"ip\":\"#{@tun_ip}\",\"lmac\":\"#{@lan_mac}\",\"system\":\"#{@system_type}\",\"machine_type\":\"#{@machine_type}\",\"firmware\":\"#{@firmware}\",\"wan_interface\":\"#{@wan_name}\",\"wan_ip\":\"#{get_wan_ip(@wan_name)}\",\"uptime\":\"#{uptime}\",\"sync\":\"#{@sync}\",\"version\":\"#{@version}\",\"chilli\":\"#{chilli_list}\",\"dhcp_leases\":\"#{@dhcp_leases}\",\"logs\":\"#{@logs}\",\"prefs\":#{@prefs}},\"wifi_clients\":#{@wifi_clients},\"iwinfo\":#{@iwinfo},\"iwdump\":#{@iwdump}}"
+    data = "{\"data\":{\"serial\":\"#{@serial}\",\"ip\":\"#{@tun_ip}\",\"lmac\":\"#{@lan_mac}\",\"system\":\"#{@system_type}\",\"machine_type\":\"#{@machine_type}\",\"firmware\":\"#{@firmware}\",\"wan_interface\":\"#{@wan_name}\",\"wan_ip\":\"#{get_wan_ip(@wan_name)}\",\"uptime\":\"#{uptime}\",\"sync\":\"#{@sync}\",\"version\":\"#{@version}\",\"chilli\":\"#{chilli_list}\",\"dhcp_leases\":\"#{@dhcp_leases}\","\"logs\":\"#{@logs}\",\"prefs\":#{@prefs}},\"wifi_clients\":#{@wifi_clients}",\"iwinfo\":#{@iwinfo},\"iwdump\":#{@iwdump}}"
     Zlib::GzipWriter.open('/tmp/data.gz') do |gz|
       gz.write data
       gz.close
