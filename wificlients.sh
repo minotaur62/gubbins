@@ -14,7 +14,7 @@ do
 		host=""
 		ip=`cat /tmp/dhcp.leases | cut -f 2,3,4 -s -d" " | grep $mac | cut -f 2 -s -d" "`
 		host=`cat /tmp/dhcp.leases | cut -f 2,3,4 -s -d" " | grep $mac | cut -f 3 -s -d" "`
-		var=$ip" "$host" "$mac
+		var=$ip","$host
 		json_add_string "$mac" "$var"
 		done
 done
