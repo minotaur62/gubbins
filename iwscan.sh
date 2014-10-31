@@ -27,12 +27,12 @@ if [ -s /tmp/scan ];then
 	do
 		json_add_string "scan:" "$line"
 		scan_result=`json_dump`
-		echo $scan_result
+		printf %s $scan_result
 	done < /tmp/r_scan
 	
 else
 	json_add_string "scan:" "No results"
 	scan_result=`json_dump`
-	echo $scan_result
+	printf %s $scan_result
 fi
 rm -rf /tmp/r_scan

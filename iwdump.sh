@@ -60,5 +60,5 @@ result=$(get_iwdump $interface)
 json_add_string "$var" "$result"
 done	
 MSG=`json_dump`
-echo $MSG
+printf %s $MSG
 

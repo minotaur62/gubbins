@@ -21,7 +21,7 @@ do
 done
 json_close_object
 MSG=`json_dump`
-echo $MSG
+printf %s $MSG
 
 
 

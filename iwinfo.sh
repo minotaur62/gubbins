@@ -34,4 +34,4 @@ json_add_string "$var" "$result"
 done
 json_close_object
 iwinfo=`json_dump`
-echo $iwinfo
+printf %s $iwinfo
