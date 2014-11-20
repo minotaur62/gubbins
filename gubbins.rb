@@ -230,7 +230,7 @@ class DataCollector
 
   def restore_network_file_from_rom
     if is_static
-      `rm -rf /etc/network && /rom/etc/uci-defaults/02_network`
+      `rm -rf /etc/config/network && /rom/etc/uci-defaults/02_network`
       `cp /rom/etc/config/dhcp /etc/config/dhcp`
       `rm -rf /etc/config/wireless && /sbin/wifi detect > /etc/config/wireless`
       `/etc/init.d/network restart` 
