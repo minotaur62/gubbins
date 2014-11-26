@@ -218,7 +218,7 @@ class DataCollector
 
   def sync_configs
     puts "Get sync ??"
-    file = `/etc/chilli/online`
+    file = "/etc/chilli/online"
     if File.file?(file)
       `cp /etc/chilli/online /etc/chilli/default && /etc/init.d/chilli restart`
     end 
