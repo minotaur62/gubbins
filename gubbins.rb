@@ -15,7 +15,7 @@ class DataCollector
     @nvs = get_nvs
     @wvs = get_wvs
     @sync = get_sync
-    @version = '1.3.2'
+    @version = '1.3.3'
     @api_url = "https://api.polkaspots.com"
     @health_url = "http://health.polkaspots.com/api/v1/health"
     @firmware = firmware
