@@ -256,19 +256,19 @@ class DataCollector
   end
 
   def iwscan
-    File.file?("iwscan.sh") ? `sh /etc/scripts/iwscan.sh #{active_wlan_name}` : "DNE"
+    File.file?("iwscan.sh") ? `sh /etc/scripts/iwscan.sh #{active_wlan_name}` : '"DNE"'
   end
 
   def iwinfo
-    File.file?("iwinfo.sh") ? `sh /etc/scripts/iwinfo.sh #{active_wlan_name}` : "DNE"
+    File.file?("iwinfo.sh") ? `sh /etc/scripts/iwinfo.sh #{active_wlan_name}` : '"DNE"'
   end
 
   def airodump
-    File.file?("airodump") ? `sh /etc/scripts/airodump.sh` : "DNE"
+    File.file?("airodump") ? `sh /etc/scripts/airodump.sh` : '"DNE"'
   end
 
   def wifi_clients
-    File.file?("wificlients.sh") ? `sh /etc/scripts/wificlients.sh` : "DNE"
+    File.file?("wificlients.sh") ? `sh /etc/scripts/wificlients.sh` : '"DNE"'
   end
 
   def log(msg)
