@@ -4,12 +4,18 @@
 # /etc/scripts/wificlients.sh
 source /usr/share/libubox/jshn.sh
 json_init
+json_add_string "version" "0.1"
 json_add_string "timestamp" `date +%s`
 json_add_object "interfaces"
 for interface in `iw dev | grep Interface | cut -f 2 -s -d" "`
 do
         json_add_object "$interface"
-        maclist=`iw dev $interface station dump | grep Station | cut -f 2 -s -d" "`
+        maclist=`iw dev $interface station dump | tee -a /tmp/wifi_clients | grep Station | cut -f 2 -s -d" "`
+        sed -i 's/ //g' /tmp/wifi_clients
+				sed -i ':a;N;$!ba;s/\n/,/g' /tmp/wifi_clients
+				sed -i 's/Station\+/\n&/g' /tmp/wifi_clients
+				sed -i '/^\s*$/d'  /tmp/wifi_clients
+				sed -i 's/\t//g' /tmp/wifi_clients
         for mac in $maclist
         do
                 ip="UNKN"
@@ -21,6 +27,7 @@ do
                 json_add_string "$mac" "$var"
                 done
         json_close_object
+				rm -rf /tmp/wifi_clients
 done
 
 json_close_object

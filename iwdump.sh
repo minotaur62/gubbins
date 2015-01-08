@@ -8,7 +8,7 @@ get_iwdump() {
 iw dev $interface station dump > /tmp/connected_clients
 #if [[ -s /tmp/wireless_clients ]] ; then
 #echo "NO clients connected so file is empty"
-#fi
+#fi space  sed 's/ //g'
 sed -i 's/\t//g' /tmp/connected_clients
 sed -i 's/tx//g' /tmp/connected_clients
 sed -i 's/rx//g' /tmp/connected_clients
