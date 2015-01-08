@@ -2,29 +2,31 @@
 
 require 'zlib'
 
-class DataCollector
-
-  def initialize
-    @wan_name = get_wan_name
-    @lan_name = get_lan_name
-    @wan_mac = wan_mac(@wan_name)
-    @lan_mac = lan_mac(@lan_name)
-    @serial = get_serial
-    @system_type = get_system_type
-    @machine_type = get_machine_type
-    @nvs = get_nvs
-    @wvs = get_wvs
-    @sync = get_sync
-    @version = '1.3.4'
-    @api_url = "https://api.polkaspots.com"
-    @health_url = "http://health.polkaspots.com/api/v1/health"
-    @firmware = firmware
-    @ca = ca_checksum
-    @prefs= get_prefs
-    @logs= read_logfile
-    @tun_ip = get_tun_ip("tun5")
-  end
-
+class Dataollector
+  $wan_name = get_wan_name
+  $lan_name = get_lan_name
+  $wan_mac = interface_mac($wan_name)
+  $lan_mac = interface_mac($lan_name)
+  $system_type = get_system_type
+  $machine_type = get_machine_type
+  $external_server = "8.8.8.8"
+  $version = '1.3.4'
+  $api_url = "https://api.polkaspots.com"
+  $health_url = "http://health.polkaspots.com/api/v1/health"
+  @serial = get_serial
+  @nvs = get_nvs
+  @wvs = get_wvs
+  @sync = get_sync
+  @firmware = firmware
+  @ca = ca_checksum
+  @prefs= get_prefs
+  @logs= read_logfile
+  @tun_ip = get_tun_ip("tun5")
+  @iwinfo = iwinfo
+  @iwscan = iwscan
+  @wifi_clients = wifi_clients
+  @gateway = gateway
+  
   def get_wan_name
     f = `/sbin/uci -P/var/state get network.wan.ifname`
     if ($? !=0) || (f.include?("not"))
@@ -32,28 +34,36 @@ class DataCollector
     end
     f.split("\n").first
   end
+   
+  def get_lan_name
+    return `/sbin/uci -P/var/state get network.lan.ifname`
+  end
+  
+  def interface_mac(device)
+    f = `/sbin/ifconfig #{device}`
+    if f.match(/(\S+)\:(\S+)\:(\S+)\:(\S+)\:(\S+)\:(\S+)/)
+      "#$1:#$2:#$3:#$4:#$5:#$6"
+    end
+  end
+
+  def get_system_type
+    f = `cat /proc/cpuinfo`
+    f = f[/system type		: (.*)/, 1]
+    f.split[0..1].join " "
+  end 
+
+  def get_machine_type
+    f = `cat /proc/cpuinfo`
+    f[/machine			: (.*)/, 1]
+  end 
 
   def get_wan_ip(device)
     f = `/sbin/ifconfig #{device}`
     f[/net addr:(\S+)/,1]
   end
 
-  def wan_mac(device)
-    f = `/sbin/ifconfig #{device}`
-    if f.match(/(\S+)\:(\S+)\:(\S+)\:(\S+)\:(\S+)\:(\S+)/)
-      "#$1:#$2:#$3:#$4:#$5:#$6"
-    end
-  end
-
   def get_lan_name
     return `/sbin/uci -P/var/state get network.lan.ifname`
-  end
-
-  def lan_mac(device)
-    f = `/sbin/ifconfig #{device}`
-    if f.match(/(\S+)\:(\S+)\:(\S+)\:(\S+)\:(\S+)\:(\S+)/)
-      "#$1:#$2:#$3:#$4:#$5:#$6"
-    end
   end
 
   def get_tun_ip(device)
@@ -70,12 +80,6 @@ class DataCollector
   def get_machine_type
     f = `cat /proc/cpuinfo`
     f[/machine			: (.*)/, 1]
-  end
-
-  def get_system_type
-    f = `cat /proc/cpuinfo`
-    f = f[/system type		: (.*)/, 1]
-    f.split[0..1].join " "
   end
 
   def uptime
@@ -120,15 +124,6 @@ class DataCollector
     return hash
   end
 
-  def read_dhcp_leases
-    #file = "/tmp/dhcp/leases"
-    #if(!(File.file?(file)) || (File.zero?(file)))
-    #  return "no devices connected"
-    #end
-    #dhcp_leases = `cat /tmp/dhcp.leases`
-    #dhcp_leases.gsub("\n",",")
-  end
-
   def firmware
     f = `cat /etc/openwrt_version | awk '{printf("%s",$all)}'`
   end
@@ -160,16 +155,19 @@ class DataCollector
   end
 
   def expected_response
-    ["200", "201", "404", "500"].include? check_success_url(@health_url)
+    response_code = check_success_url($health_url)  
+    if ["200", "201", "404", "500"].exclude? response_code
+      puts "Health check failed, exiting."
+      exit
+    end  
   end
 
   def run
     system 'touch /tmp/gubbins.lock'
-    expected_response ? HeartBeat.new.beat : run_in_loop
+    expected_response ? self.new.beat : run_in_loop
   end
 
   def run_in_loop
-    if unhealthy
     i=0
     loop do
       i+=1
@@ -177,7 +175,7 @@ class DataCollector
       sleep 15
       if $live == true
         restore_any_future_changes
-        HeartBeat.new.beat
+        self.new.beat
         break
       end
     end
@@ -185,7 +183,7 @@ class DataCollector
 
   def is_static
     @prefs= get_prefs
-    if @prefs != '"not exists"'
+    if @prefs != '"DNE"'
       file = File.open('/etc/prefs', 'rb')
       string = file.read
       file.close
@@ -244,46 +242,32 @@ class DataCollector
     %x{curl --connect-timeout 5 --write-out "%{http_code}" --silent --output /dev/null "#{url}"}
   end
 
-  module WirelessScanner
-
-    def scan_active_interfaces
-      @iwinfo = iwinfo
-      @iwscan = iwscan
-      @wifi_clients = wifi_clients
-    end
-
-    def get_active_wlan
-       w = `echo \`ls /sys/class/net | grep wlan\` | awk '{ print $all }'`
-    end
-
-    def iwscan
-      if File.file?(iwscan.sh) ? : `sh /etc/scripts/iwscan.sh #{get_active_wlan}` : false
-    end
-
-    def iwinfo
-      `sh /etc/scripts/iwinfo.sh #{get_active_wlan}`
-    end
-
-    def airodump
-      `sh /etc/scripts/airodump.sh`
-    end
-
-    def wifi_clients
-      `sh /etc/scripts/wificlients.sh`
-    end
-
+  def active_wlan_name
+    @active_wlan_name ||= `echo \`ls /sys/class/net | grep wlan\` | awk '{ print $all }'`
   end
 
-end
+  def iwscan
+    File.file?("iwscan.sh") ? `sh /etc/scripts/iwscan.sh #{active_wlan_name}` : "DNE"
+  end
 
-class Logger
+  def iwinfo
+    File.file?("iwinfo.sh") ? `sh /etc/scripts/iwinfo.sh #{active_wlan_name}` : "DNE"
+  end
+
+  def airodump
+    File.file?("airodump")  ? `sh /etc/scripts/airodump.sh` : "DNE"
+  end
+
+  def wifi_clients
+    File.file("wificlients.sh") ? `sh /etc/scripts/wificlients.sh` : "DNE"
+  end
 
   def log(msg)
     `logger #{msg}`
   end
 
   def log_interface_change
-    `dmesg | awk -F ] '{"cat /proc/uptime | cut -d \" \" -f 1" | getline st;a=substr( $1,2,length($1) - 1);print strftime("%F %H:%M:%S %Z",systime()-st+a)" -> "$0}' | grep  eth1 | tail -1 | awk ' { print $all  }' > /etc/status`
+    `dmesg | awk -F ] '{"cat /proc/uptime | cut -d \" \" -f 1" | getline st;a=substr( $1,2,length($1) - 1);print strftime("%F %H:%M:%S %Z",systime()-st+a)" -> "$0}' | grep  #{$wan_name} | tail -1 | awk ' { print $all  }' > /etc/status`
   end
 
   def log_no_wan_ip
@@ -294,18 +278,9 @@ class Logger
     `echo \`date\` Cannot ping to gateway > /etc/status`
   end
 
-end
-
-class OfflineResponder
-
-  def initialize
-    @external_server = "8.8.8.8"
-    @gateway = gateway
-  end
 
   def wan_status
-    @eth = DataCollector.new.get_wan_name.split('-').join('')
-    a = `dmesg | grep #{@eth} | tail -1`
+    a = `dmesg | grep #{$wan_name} | tail -1`
     a[/link (\S+)/,1]
   end
 
@@ -323,7 +298,7 @@ class OfflineResponder
   end
 
   def no_wan_ip
-    @wan_ip = DataCollector.new.get_wan_ip(DataCollector.new.get_wan_name)
+    @wan_ip = self.new.get_wan_ip($wan_name)
     wan_response = can_ping_ip(@wan_ip)
     wan_response != "success"
   end
@@ -334,18 +309,12 @@ class OfflineResponder
   end
 
   def external_server_is_down
-    externalserver_response = can_ping_ip(@external_server)
+    externalserver_response = can_ping_ip($external_server)
     externalserver_response != "success"
   end
 
-end
-
-class HeartBeat < DataCollector
-
-  include WirelessScanner
-
   def compress_data
-    data = "{\"data\":{\"serial\":\"#{@serial}\",\"ip\":\"#{@tun_ip}\",\"lmac\":\"#{@lan_mac}\",\"system\":\"#{@system_type}\",\"machine_type\":\"#{@machine_type}\",\"firmware\":\"#{@firmware}\",\"wan_interface\":\"#{@wan_name}\",\"wan_ip\":\"#{get_wan_ip(@wan_name)}\",\"uptime\":\"#{uptime}\",\"sync\":\"#{@sync}\",\"version\":\"#{@version}\",\"chilli\":\"#{chilli_list}\",\"logs\":\"#{@logs}\",\"prefs\":#{@prefs}},\"wifi_clients\":#{@wifi_clients},\"iwinfo\":#{@iwinfo},\"iwscan\":#{@iwscan}}"
+    data = "{\"data\":{\"serial\":\"#{@serial}\",\"ip\":\"#{@tun_ip}\",\"lmac\":\"#{$lan_mac}\",\"system\":\"#{$system_type}\",\"machine_type\":\"#{$machine_type}\",\"firmware\":\"#{@firmware}\",\"wan_interface\":\"#{$wan_name}\",\"wan_ip\":\"#{get_wan_ip($wan_name)}\",\"uptime\":\"#{uptime}\",\"sync\":\"#{@sync}\",\"version\":\"#{$version}\",\"chilli\":\"#{chilli_list}\",\"logs\":\"#{@logs}\",\"prefs\":#{@prefs}},\"wifi_clients\":#{@wifi_clients},\"iwinfo\":#{@iwinfo},\"iwscan\":#{@iwscan}}"
     Zlib::GzipWriter.open('/tmp/data.gz') do |gz|
       gz.write data
       gz.close
@@ -353,24 +322,24 @@ class HeartBeat < DataCollector
   end
 
   def post_data
-    `curl --silent --connect-timeout 5 -F data=@/tmp/data.gz -F 'mac=#{@wan_mac}' -F 'ca=#{@ca}' #{@api_url}/api/v1/nas/gubbins -k | ash`
+    `curl --silent --connect-timeout 5 -F data=@/tmp/data.gz -F 'mac=#{$wan_mac}' -F 'ca=#{@ca}' #{$api_url}/api/v1/nas/gubbins -k | ash`
     `rm -rf /etc/status`
     `rm -rf /tmp/gubbins.lock`
   end
 
-  def beat/check
-    if _success_url(@health_url) == "200"
+  def beat
+    if _success_url($health_url) == "200"
       scan_active_interfaces
       compress_data
       post_data
     end
     `rm -rf /tmp/gubbins.lock`
   end
-
+  
 end
 
- if File.exists?('/tmp/gubbins.lock') && File.ctime('/tmp/gubbins.lock') > (Time.now - 60)
-   puts "Already testing the connectivity"
- else
-   DataCollector.new.run
- end
+if File.exists?('/tmp/gubbins.lock') && File.ctime('/tmp/gubbins.lock') > (Time.now - 180)
+puts "Already testing the connectivity"
+else
+DataCollector.new.run
+end
