@@ -27,8 +27,6 @@ class DataCollector
     @iwinfo = iwinfo
     @iwscan = iwscan
     @wifi_clients = wifi_clients
-    @wan_ip = get_wan_ip($wan_name) 
-    @gateway = gateway
   end  
   
   def get_wan_name
@@ -159,25 +157,29 @@ class DataCollector
   end
   
   def connectivity_check
-    external_server_is_down ? run_in_loop : health_check
+     puts external_server_is_down 
+     external_server_is_down ? run_in_loop : health_check
   end 
 
   def health_check
-    response_code = check_success_url($health_url) 
+    response_code = check_success_url($health_url)
+    puts response_code
     unless ["200", "201", "404", "500"].include? response_code
       puts "Health check failed, exiting."
       `rm -rf /tmp/gubbins.lock`
       exit
-    end
+    end 
+      puts "doing healthcheck"  
       system 'touch /tmp/gubbins.lock'
-      beat   
+      beat 
   end
   
   def run_in_loop
-   puts "diagnose connection"
+   puts "I am executing"
     i=0
     loop do
       i+=1
+      puts i 
       offline_diagnosis(i)
       sleep 15
       if $live == true
@@ -200,19 +202,27 @@ class DataCollector
 
   def offline_diagnosis(interval)
     if wan_interface_is_down
+      puts wan_interface_is_down  
+      puts "wan_is_down" 
       log_interface_change if interval == 2
     elsif no_wan_ip
+       puts "no Wan : #{no_wan_ip} " 
       log_no_wan_ip if interval == 2
       restore_network_file_from_rom if interval == 5
+    #elsif gateway_is_down
+     #  puts gateway_is_down
+     # log_gateway_failure if interval == 2  
     elsif external_server_is_down
+      puts "respomnd #{external_server_is_down}"
+      puts "No external"  
       change_chilli_logins if interval == 2
-    else
+    else  
       restore_config_and_set_live
-    end
   end
+  end 
 
   def restore_any_future_changes
-    puts "restoring the config files"
+    puts "Make sure all the config is restored"
   end
 
   def restore_config_and_set_live
@@ -293,17 +303,19 @@ class DataCollector
   end
 
   def wan_interface_is_down
-    wan_status != "up"
+    puts wan_status 
+    wan_status == "down" ? true : false
   end
 
   def can_ping_ip(ip)
     `ping  -c 1 #{ip}`
-    return "success" if $? == 0
+    return "success"  if $? == 0
   end
 
-  def no_wan_ip
+  def no_wan_ip 
     @wan_ip = get_wan_ip($wan_name)
     wan_response = can_ping_ip(@wan_ip)
+    puts @wan_ip
     wan_response == "success" ? false : true
   end
 
@@ -313,8 +325,8 @@ class DataCollector
   end
 
   def external_server_is_down
-    external_server_response = can_ping_ip($external_server)
-    external_server_response == "success" ? false : true
+   external_server_response = can_ping_ip($external_server)
+   external_server_response == "success" ? false : true
   end
 
   def compress_data
@@ -346,4 +358,5 @@ puts "Already testing the connectivity"
 else
 DataCollector.new.connectivity_check
 end
+
 

@@ -323,17 +323,14 @@ class OfflineResponder
   def no_wan_ip
     @wan_ip = DataCollector.new.get_wan_ip(DataCollector.new.get_wan_name)
     wan_response = can_ping_ip(@wan_ip)
-    wan_response != "success"
   end
   
   def gateway_is_down
     gw_response = can_ping_ip(@gateway)
-    gw_response != "success" 
   end
   
   def external_server_is_down
     externalserver_response = can_ping_ip(@external_server)
-    externalserver_response != "success"
   end
    
 end 
