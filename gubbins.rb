@@ -43,7 +43,7 @@ class DataCollector
         end
       end   
       sleep 5
-      get_respose_from_ct
+      get_response_from_ct
       puts "Box not added to CT"
       i+=1
     end      
@@ -61,7 +61,7 @@ class DataCollector
   end
   
   def download_latest_configs
-    `curl #{$base_url}/#{$version}/#{$development_mode.split("\n").first}/scripts/install.rb -o /etc/scripts/install.rb -k`
+    `curl #{$base_url}/#{$version}/#{@development_mode.split("\n").first}/scripts/install.rb -o /etc/scripts/install.rb -k`
     `/etc/init.d/polkaspots enable`
     `chmod +x /etc/scripts/*`
     `/usr/bin/ruby /etc/scripts/install.rb &`
