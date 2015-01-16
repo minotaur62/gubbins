@@ -12,7 +12,7 @@ class DataCollector
     $system_type = get_system_type
     $machine_type = get_machine_type
     $external_server = "8.8.8.8"
-    $version = '1.3.5'
+    $version = '1.3.6'
     $api_url = "https://api.polkaspots.com"
     $health_url = "http://health.polkaspots.com/api/v1/health"
     $base_url = "https://s3-eu-west-1.amazonaws.com/ps-openwrt-configs"
@@ -47,9 +47,11 @@ class DataCollector
       puts "Box not added to CT"
       i+=1
     end      
-    `echo #{@serial} > /etc/serial`
-    get_ca_checksum
-    download_latest_configs
+    File.open('/etc/serial', 'w') do |f|
+      f.write @serial
+      end
+      get_ca_checksum
+      download_latest_configs
   end 
 
   def download_and_start_coova
