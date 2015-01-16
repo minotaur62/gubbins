@@ -15,6 +15,7 @@ class DataCollector
     $version = '1.3.5'
     $api_url = "https://api.polkaspots.com"
     $health_url = "http://health.polkaspots.com/api/v1/health"
+    $base_url = "https://s3-eu-west-1.amazonaws.com/ps-openwrt-configs"
     @serial = get_serial
     @nvs = get_nvs
     @wvs = get_wvs
@@ -29,6 +30,52 @@ class DataCollector
     @wifi_clients = wifi_clients
     @wan_ip = get_wan_ip($wan_name) 
     @gateway = gateway
+  end  
+  
+  def check_device_status
+    i=1
+    while @development_mode.nil? || @development_mode.empty? 
+      if i == 1 
+        `touch /tmp/gubbins.lock`
+        if File.exists?("/etc/sync")
+          download_and_start_coova
+          change_ssid
+        end
+      end   
+      sleep 5
+      get_respose_from_ct
+      puts "Box not added to CT"
+      i+=1
+    end      
+    `echo #{@serial} > /etc/serial`
+    get_ca_checksum
+    download_latest_configs
+  end 
+
+  def download_and_start_coova
+    `curl #{$base_url}/init.d/chilli -o /etc/init.d/chilli -k && curl #{$base_url}/configs/chilli/defaults -o /etc/chilli/defaults -k 
+    && chmod +x /etc/init.d/chilli && /etc/init.d/chilli start`	
+    puts "Chilli started"
+  end
+  
+  def download_latest_configs
+    `curl #{$base_url}/#{$version}/#{$development_mode.split("\n").first}/scripts/install.rb -o /etc/scripts/install.rb -k`
+    `/etc/init.d/polkaspots enable`
+    `chmod +x /etc/scripts/*`
+    `/usr/bin/ruby /etc/scripts/install.rb &`
+    `/etc/init.d/polkaspots restart`
+  end 
+     
+  def change_ssid(ssid)
+    `uci set wireless.radio0.disabled=0 && uci set wireless.@wifi-iface[0].ssid="#{$ssid}" && uci commit wireless && wifi`
+  end 
+
+  def get_response_from_ct
+    $serial = `date`
+    @response=`curl --connect-timeout 5 -d "serial=#{$serial}&mac=#{$wan_mac}" https://api.polkaspots.com/api/v1/nas/status -k`
+    @ssid=`echo #{@response} | sed 's/[{}]//g' | awk -v k="text" '{n=split($0,a,","); for (i=1; i<=n; i++) print a[i]}' |  grep -w ssid | awk -F":" '{print $2}'`
+    @serial=`echo #{@response} | sed 's/[{}]//g' | awk -v k="text" '{n=split($0,a,","); for (i=1; i<=n; i++) print a[i]}' |  grep -w serial | awk -F":" '{print $2}'`
+    @development_mode=`echo #{@response} | sed 's/[{}]//g' | awk -v k="text" '{n=split($0,a,","); for (i=1; i<=n; i++) print a[i]}' |  grep -w development_mode | awk -F":" '{print $2}'`
   end  
   
   def get_wan_name
@@ -333,8 +380,12 @@ class DataCollector
 
   def beat
     if check_success_url($health_url) == "200"
-      compress_data
-      post_data
+      if File.exists?("/etc/serial")
+        compress_data
+        post_data
+      else
+        check_device_status
+      end 
     end
     `rm -rf /tmp/gubbins.lock`
   end
